@@ -21,9 +21,7 @@ import json
 
 
 import torch
-torch.cuda.empty_cache()
-import gc
-gc.collect()
+
 from fvcore.nn.precise_bn import get_bn_modules
 # from detectron2.data.datasets import register_coco_instances
 import detectron2.utils.comm as comm
@@ -47,7 +45,9 @@ from diffusiondet import add_diffusiondet_config, DiffusionDetWithTTA
 from diffusiondet.util.model_ema import add_model_ema_configs, may_build_model_ema, may_get_ema_checkpointer, EMAHook, \
     apply_model_ema_and_restore, EMADetectionCheckpointer
 
-detectron2_root = '/home/alejo/lidar_research/DiffusionDetLidar'
+# detectron2_root = '/home/alejo/lidar_research/DiffusionDetLidar'
+
+detectron2_root = '/content/DiffusionDetLidar'
 
 
 class Trainer(DefaultTrainer):
@@ -271,7 +271,7 @@ def setup(args):
     cfg.merge_from_list(args.opts)
     cfg.DATALOADER.NUM_WORKERS = 2
     cfg.DATASETS.TRAIN = ("kitti_train",)
-    cfg.DATASETS.TEST = ("kitti_val")
+    # cfg.DATASETS.TEST = ("kitti_val")
     cfg.SOLVER.BASE_LR = 0.00020  # pick a good LR
     cfg.SOLVER.MAX_ITER = 10 #5000    # 300 iterations seems good enough for this toy dataset; you will need to train longer for a practical dataset
     cfg.SOLVER.STEPS = []        # do not decay learning rate
@@ -322,7 +322,7 @@ def main(args):
     training_classes = '0,1,2,3,4,5,6,7,8'
 
     if (0):
-        f = open('/home/alejo/lidar_research/DiffusionDetLidar/datasets/bv_kitti/annotations/training_annotations_kitti__RBHCVPr16.json')
+        f = open('/content/DiffusionDetLidar/datasets/bv_kitti/annotations/training_annotations_kitti__RBHCVPr16.json')
         train_path = json.load(f)
         f.close()
     else:

@@ -5,11 +5,10 @@ MODEL:
     DEPTH: 50
     STRIDE_IN_1X1: False
   DiffusionDet:
-    NUM_PROPOSALS: 500
-    NUM_CLASSES: 80
+    NUM_PROPOSALS: 300
+    NUM_CLASSES: 9
 DATASETS:
   TRAIN: ("kitti_train",)
-  TEST:  ("kitti_val",)
 SOLVER:
   STEPS: (350000, 420000)
   MAX_ITER: 450000

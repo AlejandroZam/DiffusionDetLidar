@@ -162,6 +162,7 @@ class DynamicHead(nn.Module):
         
         for head_idx, rcnn_head in enumerate(self.head_series):
             class_logits, pred_bboxes, proposal_features = rcnn_head(features, bboxes, proposal_features, self.box_pooler, time)
+            print(proposal_features.size())
             if self.return_intermediate:
                 inter_class_logits.append(class_logits)
                 inter_pred_bboxes.append(pred_bboxes)
