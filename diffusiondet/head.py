@@ -161,8 +161,12 @@ class DynamicHead(nn.Module):
             proposal_features = None
         
         for head_idx, rcnn_head in enumerate(self.head_series):
-            class_logits, pred_bboxes, proposal_features = rcnn_head(features, bboxes, proposal_features, self.box_pooler, time)
-            print(proposal_features.size())
+            # logits from height use for prediction
+            class_logits, pred_bboxes, proposal_features,height_logits = rcnn_head(features, bboxes, proposal_features, self.box_pooler, time)
+
+            print(height_logits.size())
+
+            #print(proposal_features.size())
             if self.return_intermediate:
                 inter_class_logits.append(class_logits)
                 inter_pred_bboxes.append(pred_bboxes)
@@ -227,6 +231,11 @@ class RCNNHead(nn.Module):
             self.class_logits = nn.Linear(d_model, num_classes)
         else:
             self.class_logits = nn.Linear(d_model, num_classes + 1)
+
+
+        self.height_logits = nn.Linear(d_model, 2)
+
+
         self.bboxes_delta = nn.Linear(d_model, 4)
         self.scale_clamp = scale_clamp
         self.bbox_weights = bbox_weights
@@ -236,7 +245,7 @@ class RCNNHead(nn.Module):
         :param bboxes: (N, nr_boxes, 4)
         :param pro_features: (N, nr_boxes, d_model)
         """
-
+        # print(bboxes.size())
         N, nr_boxes = bboxes.shape[:2]
         
         # roi_feature.
@@ -276,15 +285,20 @@ class RCNNHead(nn.Module):
 
         cls_feature = fc_feature.clone()
         reg_feature = fc_feature.clone()
+
         for cls_layer in self.cls_module:
             cls_feature = cls_layer(cls_feature)
         for reg_layer in self.reg_module:
             reg_feature = reg_layer(reg_feature)
+ 
+
+
         class_logits = self.class_logits(cls_feature)
+        height_logits = self.height_logits(cls_feature)
         bboxes_deltas = self.bboxes_delta(reg_feature)
         pred_bboxes = self.apply_deltas(bboxes_deltas, bboxes.view(-1, 4))
         
-        return class_logits.view(N, nr_boxes, -1), pred_bboxes.view(N, nr_boxes, -1), obj_features
+        return class_logits.view(N, nr_boxes, -1), pred_bboxes.view(N, nr_boxes, -1), obj_features, height_logits.view(N,nr_boxes,-1)
 
     def apply_deltas(self, deltas, boxes):
         """
