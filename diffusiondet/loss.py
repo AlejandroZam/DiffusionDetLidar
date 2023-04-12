@@ -201,7 +201,10 @@ class SetCriterionDynamicK(nn.Module):
             losses['loss_giou'] = loss_giou.sum() / num_boxes
         else:
             losses = {'loss_bbox': outputs['pred_boxes'].sum() * 0,
-                      'loss_giou': outputs['pred_boxes'].sum() * 0}
+                      'loss_giou': outputs['pred_boxes'].sum() * 0
+                      
+                      
+                      }
 
         return losses
 
@@ -221,6 +224,7 @@ class SetCriterionDynamicK(nn.Module):
         loss_map = {
             'labels': self.loss_labels,
             'boxes': self.loss_boxes,
+            'height': self.loss_height
         }
         assert loss in loss_map, f'do you really want to compute {loss} loss?'
         return loss_map[loss](outputs, targets, indices, num_boxes, **kwargs)
@@ -246,6 +250,9 @@ class SetCriterionDynamicK(nn.Module):
 
         # Compute all the requested losses
         losses = {}
+
+        print(outputs.keys())
+
         for loss in self.losses:
             losses.update(self.get_loss(loss, outputs, targets, indices, num_boxes))
 
@@ -274,7 +281,7 @@ class HungarianMatcherDynamicK(nn.Module):
     there are more predictions than targets. In this case, we do a 1-to-k (dynamic) matching of the best predictions,
     while the others are un-matched (and thus treated as non-objects).
     """
-    def __init__(self, cfg, cost_class: float = 1, cost_bbox: float = 1, cost_giou: float = 1, cost_mask: float = 1, use_focal: bool = False):
+    def __init__(self, cfg, cost_class: float = 1, cost_bbox: float = 1, cost_giou: float = 1, cost_mask: float = 1, use_focal: bool = False, cost_height: float = 1):
         """Creates the matcher
         Params:
             cost_class: This is the relative weight of the classification error in the matching cost
@@ -284,6 +291,7 @@ class HungarianMatcherDynamicK(nn.Module):
         super().__init__()
         self.cost_class = cost_class
         self.cost_bbox = cost_bbox
+        self.cost_height = cost_height
         self.cost_giou = cost_giou
         self.use_focal = use_focal
         self.use_fed_loss = cfg.MODEL.DiffusionDet.USE_FED_LOSS

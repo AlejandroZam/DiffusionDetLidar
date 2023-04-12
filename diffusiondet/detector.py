@@ -133,6 +133,7 @@ class DiffusionDet(nn.Module):
         class_weight = cfg.MODEL.DiffusionDet.CLASS_WEIGHT
         giou_weight = cfg.MODEL.DiffusionDet.GIOU_WEIGHT
         l1_weight = cfg.MODEL.DiffusionDet.L1_WEIGHT
+        l1_height_weight = cfg.MODEL.DiffusionDet.L1_HEIGHT_WEIGHT
         no_object_weight = cfg.MODEL.DiffusionDet.NO_OBJECT_WEIGHT
         self.deep_supervision = cfg.MODEL.DiffusionDet.DEEP_SUPERVISION
         self.use_focal = cfg.MODEL.DiffusionDet.USE_FOCAL
@@ -141,16 +142,15 @@ class DiffusionDet(nn.Module):
 
         # Build Criterion.
         matcher = HungarianMatcherDynamicK(
-            cfg=cfg, cost_class=class_weight, cost_bbox=l1_weight, cost_giou=giou_weight, use_focal=self.use_focal
-        )
-        weight_dict = {"loss_ce": class_weight, "loss_bbox": l1_weight, "loss_giou": giou_weight}
+            cfg=cfg, cost_class=class_weight, cost_bbox=l1_weight, cost_giou=giou_weight, use_focal=self.use_focal,cost_height = l1_height_weight )
+        weight_dict = {"loss_ce": class_weight, "loss_bbox": l1_weight, "loss_giou": giou_weight,'height_loss':l1_height_weight}
         if self.deep_supervision:
             aux_weight_dict = {}
             for i in range(self.num_heads - 1):
                 aux_weight_dict.update({k + f"_{i}": v for k, v in weight_dict.items()})
             weight_dict.update(aux_weight_dict)
 
-        losses = ["labels", "boxes"]
+        losses = ["labels", "boxes",'height']
 
         self.criterion = SetCriterionDynamicK(
             cfg=cfg, num_classes=self.num_classes, matcher=matcher, weight_dict=weight_dict, eos_coef=no_object_weight,
@@ -320,7 +320,7 @@ class DiffusionDet(nn.Module):
             t = t.squeeze(-1)
             x_boxes = x_boxes * images_whwh[:, None, :]
 
-            outputs_class, outputs_coord = self.head(features, x_boxes, t, None)
+            outputs_class, outputs_coord = self.head(features, x_boxes, t, None,None)
             output = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
 
             if self.deep_supervision:

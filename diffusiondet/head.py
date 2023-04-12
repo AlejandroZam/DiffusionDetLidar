@@ -143,15 +143,17 @@ class DynamicHead(nn.Module):
         )
         return box_pooler
 
-    def forward(self, features, init_bboxes, t, init_features):
+    def forward(self, features, init_bboxes, t, init_features,init_heights):
         # assert t shape (batch_size)
         time = self.time_mlp(t)
 
         inter_class_logits = []
         inter_pred_bboxes = []
+        # inter_heights = []
 
         bs = len(features[0])
         bboxes = init_bboxes
+        heights = init_heights
         num_boxes = bboxes.shape[1]
 
         if init_features is not None:
@@ -164,7 +166,7 @@ class DynamicHead(nn.Module):
             # logits from height use for prediction
             class_logits, pred_bboxes, proposal_features,height_logits = rcnn_head(features, bboxes, proposal_features, self.box_pooler, time)
 
-            print(height_logits.size())
+            # print(height_logits.size())
 
             #print(proposal_features.size())
             if self.return_intermediate:
