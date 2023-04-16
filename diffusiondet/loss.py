@@ -10,7 +10,7 @@ DiffusionDet model and criterion classes.
 """
 import torch
 import torch.nn.functional as F
-from torch import nn
+from torch import index_add, nn
 from fvcore.nn import sigmoid_focal_loss_jit
 import torchvision.ops as ops
 from .util import box_ops
@@ -213,7 +213,48 @@ class SetCriterionDynamicK(nn.Module):
            targets dicts must contain the key "boxes" containing a tensor of dim [nb_target_boxes, 4]
            The target boxes are expected in format (center_x, center_y, w, h), normalized by the image size.
         """
-  
+        assert 'pred_height' in outputs
+        src_heights= outputs['pred_height']
+        batch_size = len(targets)
+
+
+
+        pred_height_list = []
+        pred_norm_height_list = []
+        tgt_height_list = []
+
+        for batch_idx in range(batch_size):
+            valid_query = indices[batch_idx][0]
+            gt_multi_idx = indices[batch_idx][1]
+            if len(gt_multi_idx) == 0:
+                continue
+            #predictions    
+            bz_src_heights = src_heights[batch_idx]     
+            bz_target_heights = targets[batch_idx]['height']
+
+            pred_height_list.append(bz_src_heights[valid_query])
+            #normalize here if needed, normalize by average class height
+            tgt_height_list.append(bz_target_heights[gt_multi_idx])
+            #normalize here if needed, normalize by average class height
+
+
+
+        if len(pred_height_list) != 0:
+            src_h = torch.cat(pred_height_list)
+
+            target_h = torch.cat(tgt_height_list)
+
+            num_h = src_h.shape[0]
+
+            losses = {}
+            # require normalized (x1, y1, x2, y2)
+            loss_height = F.l1_loss(src_h, target_h, reduction='none')
+            losses['loss_height'] = loss_height.sum() / num_boxes
+
+
+        else:
+            losses = {'loss_height': outputs['pred_height'].sum() * 0}
+
 
         return losses
 

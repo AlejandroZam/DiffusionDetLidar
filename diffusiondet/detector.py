@@ -150,7 +150,7 @@ class DiffusionDet(nn.Module):
                 aux_weight_dict.update({k + f"_{i}": v for k, v in weight_dict.items()})
             weight_dict.update(aux_weight_dict)
 
-        losses = ["labels", "boxes",'height']
+        losses = ["labels", "boxes","height"]
 
         self.criterion = SetCriterionDynamicK(
             cfg=cfg, num_classes=self.num_classes, matcher=matcher, weight_dict=weight_dict, eos_coef=no_object_weight,
