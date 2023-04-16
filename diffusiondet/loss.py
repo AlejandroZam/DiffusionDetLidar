@@ -213,6 +213,8 @@ class SetCriterionDynamicK(nn.Module):
            targets dicts must contain the key "boxes" containing a tensor of dim [nb_target_boxes, 4]
            The target boxes are expected in format (center_x, center_y, w, h), normalized by the image size.
         """
+
+        print(outputs.keys())
         assert 'pred_height' in outputs
         src_heights= outputs['pred_height']
         batch_size = len(targets)
@@ -271,6 +273,7 @@ class SetCriterionDynamicK(nn.Module):
         return batch_idx, tgt_idx
 
     def get_loss(self, loss, outputs, targets, indices, num_boxes, **kwargs):
+        
         loss_map = {
             'labels': self.loss_labels,
             'boxes': self.loss_boxes,

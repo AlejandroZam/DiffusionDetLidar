@@ -144,6 +144,7 @@ class DiffusionDet(nn.Module):
         matcher = HungarianMatcherDynamicK(
             cfg=cfg, cost_class=class_weight, cost_bbox=l1_weight, cost_giou=giou_weight, use_focal=self.use_focal,cost_height = l1_height_weight )
         weight_dict = {"loss_ce": class_weight, "loss_bbox": l1_weight, "loss_giou": giou_weight,'height_loss':l1_height_weight}
+        print('match works')
         if self.deep_supervision:
             aux_weight_dict = {}
             for i in range(self.num_heads - 1):
@@ -151,11 +152,12 @@ class DiffusionDet(nn.Module):
             weight_dict.update(aux_weight_dict)
 
         losses = ["labels", "boxes","height"]
+        print('right before criterion')
 
         self.criterion = SetCriterionDynamicK(
             cfg=cfg, num_classes=self.num_classes, matcher=matcher, weight_dict=weight_dict, eos_coef=no_object_weight,
             losses=losses, use_focal=self.use_focal,)
-
+        print('instanctiate main head')
         pixel_mean = torch.Tensor(cfg.MODEL.PIXEL_MEAN).to(self.device).view(3, 1, 1)
         pixel_std = torch.Tensor(cfg.MODEL.PIXEL_STD).to(self.device).view(3, 1, 1)
         self.normalizer = lambda x: (x - pixel_mean) / pixel_std
@@ -201,7 +203,7 @@ class DiffusionDet(nn.Module):
         for time, time_next in time_pairs:
             time_cond = torch.full((batch,), time, device=self.device, dtype=torch.long)
             self_cond = x_start if self.self_condition else None
-
+            print('model predictions')
             preds, outputs_class, outputs_coord = self.model_predictions(backbone_feats, images_whwh, img, time_cond,
                                                                          self_cond, clip_x_start=clip_denoised)
             pred_noise, x_start = preds.pred_noise, preds.pred_x_start
@@ -314,7 +316,7 @@ class DiffusionDet(nn.Module):
         if not self.training:
             results = self.ddim_sample(batched_inputs, features, images_whwh, images)
             return results
-
+        print('right before train')
         if self.training:
             gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
             targets, x_boxes, noises, t = self.prepare_targets(gt_instances)
@@ -322,6 +324,7 @@ class DiffusionDet(nn.Module):
             x_boxes = x_boxes * images_whwh[:, None, :]
 
             outputs_class, outputs_coord, outputs_height = self.head(features, x_boxes, t, None,None)
+            print(outputs_height.size())
             output = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1], 'pred_height': outputs_height[-1]}
 
             if self.deep_supervision:
