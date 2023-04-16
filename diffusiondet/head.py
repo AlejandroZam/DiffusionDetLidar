@@ -149,7 +149,7 @@ class DynamicHead(nn.Module):
 
         inter_class_logits = []
         inter_pred_bboxes = []
-        # inter_heights = []
+        inter_height_logits = []
 
         bs = len(features[0])
         bboxes = init_bboxes
@@ -172,12 +172,13 @@ class DynamicHead(nn.Module):
             if self.return_intermediate:
                 inter_class_logits.append(class_logits)
                 inter_pred_bboxes.append(pred_bboxes)
+                inter_height_logits.append(height_logits)
             bboxes = pred_bboxes.detach()
 
         if self.return_intermediate:
-            return torch.stack(inter_class_logits), torch.stack(inter_pred_bboxes)
+            return torch.stack(inter_class_logits), torch.stack(inter_pred_bboxes), torch.stack(inter_height_logits)
 
-        return class_logits[None], pred_bboxes[None]
+        return class_logits[None], pred_bboxes[None], height_logits[None]
 
 
 class RCNNHead(nn.Module):

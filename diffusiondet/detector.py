@@ -298,6 +298,7 @@ class DiffusionDet(nn.Module):
                 * "height", "width" (int): the output resolution of the model, used in inference.
                   See :meth:`postprocess` for details.
         """
+      
         images, images_whwh = self.preprocess_image(batched_inputs)
         if isinstance(images, (list, torch.Tensor)):
             images = nested_tensor_from_tensor_list(images)
@@ -320,8 +321,8 @@ class DiffusionDet(nn.Module):
             t = t.squeeze(-1)
             x_boxes = x_boxes * images_whwh[:, None, :]
 
-            outputs_class, outputs_coord = self.head(features, x_boxes, t, None,None)
-            output = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
+            outputs_class, outputs_coord, outputs_height = self.head(features, x_boxes, t, None,None)
+            output = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1], 'pred_height': outputs_height[-1]}
 
             if self.deep_supervision:
                 output['aux_outputs'] = [{'pred_logits': a, 'pred_boxes': b}
@@ -416,6 +417,7 @@ class DiffusionDet(nn.Module):
             gt_classes = targets_per_image.gt_classes
             gt_boxes = targets_per_image.gt_boxes.tensor / image_size_xyxy
             gt_boxes = box_xyxy_to_cxcywh(gt_boxes)
+            gt_height = targets_per_image.gt_height
             d_boxes, d_noise, d_t = self.prepare_diffusion_concat(gt_boxes)
             diffused_boxes.append(d_boxes)
             noises.append(d_noise)
@@ -427,6 +429,7 @@ class DiffusionDet(nn.Module):
             image_size_xyxy_tgt = image_size_xyxy.unsqueeze(0).repeat(len(gt_boxes), 1)
             target["image_size_xyxy_tgt"] = image_size_xyxy_tgt.to(self.device)
             target["area"] = targets_per_image.gt_boxes.area().to(self.device)
+            target["height"] = gt_height
             new_targets.append(target)
 
         return new_targets, torch.stack(diffused_boxes), torch.stack(noises), torch.stack(ts)
