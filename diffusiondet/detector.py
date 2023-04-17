@@ -324,12 +324,13 @@ class DiffusionDet(nn.Module):
             x_boxes = x_boxes * images_whwh[:, None, :]
 
             outputs_class, outputs_coord, outputs_height = self.head(features, x_boxes, t, None,None)
-            print(outputs_height.size())
+
+            print('proposal head output for height: ',outputs_height.size())
             output = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1], 'pred_height': outputs_height[-1]}
 
             if self.deep_supervision:
-                output['aux_outputs'] = [{'pred_logits': a, 'pred_boxes': b}
-                                         for a, b in zip(outputs_class[:-1], outputs_coord[:-1])]
+                output['aux_outputs'] = [{'pred_logits': a, 'pred_boxes': b,'pred_height':c}
+                                         for a, b, c in zip(outputs_class[:-1], outputs_coord[:-1] ,outputs_height[-1])]
 
             loss_dict = self.criterion(output, targets)
             weight_dict = self.criterion.weight_dict

@@ -164,6 +164,9 @@ class SetCriterionDynamicK(nn.Module):
         assert 'pred_boxes' in outputs
         # idx = self._get_src_permutation_idx(indices)
         src_boxes = outputs['pred_boxes']
+        print('boxes loss')
+
+   
 
         batch_size = len(targets)
         pred_box_list = []
@@ -173,14 +176,22 @@ class SetCriterionDynamicK(nn.Module):
         for batch_idx in range(batch_size):
             valid_query = indices[batch_idx][0]
             gt_multi_idx = indices[batch_idx][1]
+
+            print('valid query len: ', len(valid_query))
+
+            print('gt_multi_idx : ', gt_multi_idx)
+
             if len(gt_multi_idx) == 0:
                 continue
             bz_image_whwh = targets[batch_idx]['image_size_xyxy']
             bz_src_boxes = src_boxes[batch_idx]
+            print('length of predictions: ', len(bz_src_boxes))
             bz_target_boxes = targets[batch_idx]["boxes"]  # normalized (cx, cy, w, h)
             bz_target_boxes_xyxy = targets[batch_idx]["boxes_xyxy"]  # absolute (x1, y1, x2, y2)
+
             pred_box_list.append(bz_src_boxes[valid_query])
             pred_norm_box_list.append(bz_src_boxes[valid_query] / bz_image_whwh)  # normalize (x1, y1, x2, y2)
+            
             tgt_box_list.append(bz_target_boxes[gt_multi_idx])
             tgt_box_xyxy_list.append(bz_target_boxes_xyxy[gt_multi_idx])
 
@@ -214,12 +225,16 @@ class SetCriterionDynamicK(nn.Module):
            The target boxes are expected in format (center_x, center_y, w, h), normalized by the image size.
         """
 
-        print(outputs.keys())
+        print('height loss')
         assert 'pred_height' in outputs
         src_heights= outputs['pred_height']
         batch_size = len(targets)
 
+        # print('outputs from model: ',src_heights)
+        # print('ground truth: ',targets)
 
+        # print('indexes of batch: ',len(indices))
+        
 
         pred_height_list = []
         pred_norm_height_list = []
@@ -227,12 +242,20 @@ class SetCriterionDynamicK(nn.Module):
 
         for batch_idx in range(batch_size):
             valid_query = indices[batch_idx][0]
+            print('valid query len: ', len(valid_query))
             gt_multi_idx = indices[batch_idx][1]
+            print('gt_multi_idx : ', gt_multi_idx)
             if len(gt_multi_idx) == 0:
                 continue
             #predictions    
-            bz_src_heights = src_heights[batch_idx]     
+            bz_src_heights = src_heights[batch_idx]    
+            print('length of predictions: ', len(bz_src_heights))
+            #anno
             bz_target_heights = targets[batch_idx]['height']
+
+            # print('bz_src_heights : ', bz_src_heights)
+            # print('bz_target_heights : ', bz_target_heights)
+
 
             pred_height_list.append(bz_src_heights[valid_query])
             #normalize here if needed, normalize by average class height

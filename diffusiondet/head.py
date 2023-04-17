@@ -166,8 +166,6 @@ class DynamicHead(nn.Module):
             # logits from height use for prediction
             class_logits, pred_bboxes, proposal_features,height_logits = rcnn_head(features, bboxes, proposal_features, self.box_pooler, time)
 
-            # print(height_logits.size())
-
             #print(proposal_features.size())
             if self.return_intermediate:
                 inter_class_logits.append(class_logits)
@@ -287,6 +285,7 @@ class RCNNHead(nn.Module):
         fc_feature = fc_feature * (scale + 1) + shift
 
         cls_feature = fc_feature.clone()
+        height_feature = fc_feature.clone()
         reg_feature = fc_feature.clone()
 
         for cls_layer in self.cls_module:
@@ -297,7 +296,7 @@ class RCNNHead(nn.Module):
 
 
         class_logits = self.class_logits(cls_feature)
-        height_logits = self.height_logits(cls_feature)
+        height_logits = self.height_logits(height_feature)
         bboxes_deltas = self.bboxes_delta(reg_feature)
         pred_bboxes = self.apply_deltas(bboxes_deltas, bboxes.view(-1, 4))
         
