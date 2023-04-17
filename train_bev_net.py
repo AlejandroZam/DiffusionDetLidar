@@ -320,7 +320,7 @@ def main(args):
     if cfg.HEIGHT_TRAINING:
         optional_arguments.append('height')
 
-    training_classes = '0,1,2,3,4,5,6,7,8'
+    training_classes = '1,2,3'
 
     if (0):
         f = open('/content/DiffusionDetLidar/datasets/bv_kitti/annotations/training_annotations_kitti__RBHCVPr16.json')

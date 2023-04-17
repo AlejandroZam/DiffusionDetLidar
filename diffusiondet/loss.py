@@ -92,6 +92,8 @@ class SetCriterionDynamicK(nn.Module):
         """Classification loss (NLL)
         targets dicts must contain the key "labels" containing a tensor of dim [nb_target_boxes]
         """
+
+        print('class loss')
         assert 'pred_logits' in outputs
         src_logits = outputs['pred_logits']
         batch_size = len(targets)
@@ -108,10 +110,14 @@ class SetCriterionDynamicK(nn.Module):
             gt_multi_idx = indices[batch_idx][1]
             if len(gt_multi_idx) == 0:
                 continue
+
+            print('valid query len: ', len(valid_query))
+
+            print('gt_multi_idx : ', gt_multi_idx)
             bz_src_logits = src_logits[batch_idx]
             target_classes_o = targets[batch_idx]["labels"]
             target_classes[batch_idx, valid_query] = target_classes_o[gt_multi_idx]
-
+            print('length of predictions: ', len(bz_src_logits))
             src_logits_list.append(bz_src_logits[valid_query])
             target_classes_o_list.append(target_classes_o[gt_multi_idx])
 
@@ -252,14 +258,15 @@ class SetCriterionDynamicK(nn.Module):
             print('length of predictions: ', len(bz_src_heights))
             #anno
             bz_target_heights = targets[batch_idx]['height']
-
+            print('prediction: ' ,bz_src_heights)
+            print('annotation truth: ' ,bz_target_heights)
             # print('bz_src_heights : ', bz_src_heights)
             # print('bz_target_heights : ', bz_target_heights)
 
 
-            pred_height_list.append(bz_src_heights[valid_query])
+            # pred_height_list.append(bz_src_heights[valid_query])
             #normalize here if needed, normalize by average class height
-            tgt_height_list.append(bz_target_heights[gt_multi_idx])
+            # tgt_height_list.append(bz_target_heights[gt_multi_idx])
             #normalize here if needed, normalize by average class height
 
 
