@@ -111,8 +111,8 @@ class SetCriterionDynamicK(nn.Module):
             if len(gt_multi_idx) == 0:
                 continue
 
-            print('valid query len: ', len(valid_query))
-            print('valid query mat: ', valid_query.nonzero())
+            # print('valid query len: ', len(valid_query))
+            # print('valid query mat: ', valid_query.nonzero())
             # print('gt_multi_idx : ', gt_multi_idx)
             bz_src_logits = src_logits[batch_idx]
             # print('bz_src_logits: ',bz_src_logits)
@@ -135,6 +135,17 @@ class SetCriterionDynamicK(nn.Module):
 
             src_logits = src_logits.flatten(0, 1)
             target_classes_onehot = target_classes_onehot.flatten(0, 1)
+
+
+            print('src_h: ', src_logits.size())
+ 
+            print('target_h: ', target_classes_onehot.size())
+
+            print('num_h: ', num_boxes)
+
+
+
+
             if self.use_focal:
                 cls_loss = sigmoid_focal_loss_jit(src_logits, target_classes_onehot, alpha=self.focal_loss_alpha, gamma=self.focal_loss_gamma, reduction="none")
             else:
@@ -183,8 +194,8 @@ class SetCriterionDynamicK(nn.Module):
         for batch_idx in range(batch_size):
             valid_query = indices[batch_idx][0]
             gt_multi_idx = indices[batch_idx][1]
-            print('valid query mat: ', valid_query.nonzero())
-            print('valid query len: ', len(valid_query))
+            # print('valid query mat: ', valid_query.nonzero())
+            # print('valid query len: ', len(valid_query))
 
             # print('gt_multi_idx : ', gt_multi_idx)
 
@@ -208,6 +219,15 @@ class SetCriterionDynamicK(nn.Module):
             target_boxes = torch.cat(tgt_box_list)
             target_boxes_abs_xyxy = torch.cat(tgt_box_xyxy_list)
             num_boxes = src_boxes.shape[0]
+
+
+  
+            print('src_h: ', src_boxes.size())
+ 
+            print('target_h: ', target_boxes.size())
+
+            print('num_h: ', num_boxes)
+
 
             losses = {}
             # require normalized (x1, y1, x2, y2)
@@ -248,14 +268,19 @@ class SetCriterionDynamicK(nn.Module):
         tgt_height_list = []
 
         for batch_idx in range(batch_size):
+
+            print()
+
+
             valid_query = indices[batch_idx][0]
-            print('valid query len: ', len(valid_query))
-            print('valid query mat: ', valid_query.nonzero())
+            # print('valid query len: ', len(valid_query))
+            # print('valid query mat: ', valid_query.nonzero())
             gt_multi_idx = indices[batch_idx][1]
             # print('gt_multi_idx : ', gt_multi_idx)
             if len(gt_multi_idx) == 0:
                 continue
             #predictions    
+            print('src heights: ', src_heights[batch_idx].size())
             bz_src_heights = src_heights[batch_idx]    
             print('length of predictions: ', len(bz_src_heights))
             #anno
@@ -277,12 +302,13 @@ class SetCriterionDynamicK(nn.Module):
 
 
         if len(pred_height_list) != 0:
+            
             src_h = torch.cat(pred_height_list)
-
+            print('src_h: ', src_h.size())
             target_h = torch.cat(tgt_height_list)
-
+            print('target_h: ', target_h.size())
             num_h = src_h.shape[0]
-
+            print('num_h: ', num_h)
             losses = {}
             # require normalized (x1, y1, x2, y2)
             loss_height = F.l1_loss(src_h, target_h, reduction='none')
