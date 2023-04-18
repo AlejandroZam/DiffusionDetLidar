@@ -433,7 +433,7 @@ class DiffusionDet(nn.Module):
             image_size_xyxy_tgt = image_size_xyxy.unsqueeze(0).repeat(len(gt_boxes), 1)
             target["image_size_xyxy_tgt"] = image_size_xyxy_tgt.to(self.device)
             target["area"] = targets_per_image.gt_boxes.area().to(self.device)
-            target["height"] = gt_height
+            target["height"] = gt_height.to(self.device)
             new_targets.append(target)
 
         return new_targets, torch.stack(diffused_boxes), torch.stack(noises), torch.stack(ts)

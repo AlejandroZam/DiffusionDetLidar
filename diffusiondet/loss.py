@@ -112,9 +112,10 @@ class SetCriterionDynamicK(nn.Module):
                 continue
 
             print('valid query len: ', len(valid_query))
-
-            print('gt_multi_idx : ', gt_multi_idx)
+            print('valid query mat: ', valid_query.nonzero())
+            # print('gt_multi_idx : ', gt_multi_idx)
             bz_src_logits = src_logits[batch_idx]
+            # print('bz_src_logits: ',bz_src_logits)
             target_classes_o = targets[batch_idx]["labels"]
             target_classes[batch_idx, valid_query] = target_classes_o[gt_multi_idx]
             print('length of predictions: ', len(bz_src_logits))
@@ -182,10 +183,10 @@ class SetCriterionDynamicK(nn.Module):
         for batch_idx in range(batch_size):
             valid_query = indices[batch_idx][0]
             gt_multi_idx = indices[batch_idx][1]
-
+            print('valid query mat: ', valid_query.nonzero())
             print('valid query len: ', len(valid_query))
 
-            print('gt_multi_idx : ', gt_multi_idx)
+            # print('gt_multi_idx : ', gt_multi_idx)
 
             if len(gt_multi_idx) == 0:
                 continue
@@ -249,8 +250,9 @@ class SetCriterionDynamicK(nn.Module):
         for batch_idx in range(batch_size):
             valid_query = indices[batch_idx][0]
             print('valid query len: ', len(valid_query))
+            print('valid query mat: ', valid_query.nonzero())
             gt_multi_idx = indices[batch_idx][1]
-            print('gt_multi_idx : ', gt_multi_idx)
+            # print('gt_multi_idx : ', gt_multi_idx)
             if len(gt_multi_idx) == 0:
                 continue
             #predictions    
@@ -258,15 +260,18 @@ class SetCriterionDynamicK(nn.Module):
             print('length of predictions: ', len(bz_src_heights))
             #anno
             bz_target_heights = targets[batch_idx]['height']
-            print('prediction: ' ,bz_src_heights)
-            print('annotation truth: ' ,bz_target_heights)
-            # print('bz_src_heights : ', bz_src_heights)
-            # print('bz_target_heights : ', bz_target_heights)
+            # print('prediction: ' ,bz_src_heights)
+            # print('annotation truth: ' ,bz_target_heights)
 
 
-            # pred_height_list.append(bz_src_heights[valid_query])
+            # print(self.weight_dict)
+
+ 
+
+
+            pred_height_list.append(bz_src_heights[valid_query])
             #normalize here if needed, normalize by average class height
-            # tgt_height_list.append(bz_target_heights[gt_multi_idx])
+            tgt_height_list.append(bz_target_heights[gt_multi_idx])
             #normalize here if needed, normalize by average class height
 
 
@@ -281,7 +286,12 @@ class SetCriterionDynamicK(nn.Module):
             losses = {}
             # require normalized (x1, y1, x2, y2)
             loss_height = F.l1_loss(src_h, target_h, reduction='none')
+
+
+
             losses['loss_height'] = loss_height.sum() / num_boxes
+
+            print('loss for height: ',losses['loss_height'])
 
 
         else:
