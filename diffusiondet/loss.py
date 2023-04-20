@@ -426,9 +426,11 @@ class HungarianMatcherDynamicK(nn.Module):
             bs, num_queries = outputs["pred_logits"].shape[:2]
             # We flatten to compute the cost matrices in a batch
             if self.use_focal or self.use_fed_loss:
+                
                 out_prob = outputs["pred_logits"].sigmoid()  # [batch_size, num_queries, num_classes]
                 out_bbox = outputs["pred_boxes"]  # [batch_size,  num_queries, 4]
             else:
+
                 out_prob = outputs["pred_logits"].softmax(-1)  # [batch_size, num_queries, num_classes]
                 out_bbox = outputs["pred_boxes"]  # [batch_size, num_queries, 4]
 
@@ -495,8 +497,14 @@ class HungarianMatcherDynamicK(nn.Module):
                 # if bz_gtboxs.shape[0]>0:
                 indices_batchi, matched_qidx = self.dynamic_k_matching(cost, pair_wise_ious, bz_gtboxs.shape[0])
 
+
+
+
                 indices.append(indices_batchi)
                 matched_ids.append(matched_qidx)
+
+
+            print('after dynamic matching in matcher',outputs['pred_height'].size())
 
         return indices, matched_ids
 

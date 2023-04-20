@@ -302,6 +302,7 @@ class RCNNHead(nn.Module):
 
         print('\n\n ************************')
         print('class logits: ', class_logits.size())
+        print('bboxes_deltas: ',bboxes_deltas.size())
         print('bboxes logits: ', pred_bboxes.size())
         print('height logits: ', height_logits.size())
         print('\n\n ************************')
