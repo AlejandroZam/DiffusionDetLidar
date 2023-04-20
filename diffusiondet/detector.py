@@ -325,6 +325,7 @@ class DiffusionDet(nn.Module):
 
             outputs_class, outputs_coord, outputs_height = self.head(features, x_boxes, t, None,None)
             print('\n\n*****************************')
+            print('\n\n**********before supervision***************')
             print('proposal head output for class: ',outputs_class.size())
             print('proposal head output for bbox: ',outputs_coord.size())
             print('proposal head output for height: ',outputs_height.size())
@@ -335,7 +336,7 @@ class DiffusionDet(nn.Module):
 
             if self.deep_supervision:
                 output['aux_outputs'] = [{'pred_logits': a, 'pred_boxes': b,'pred_height':c}
-                                         for a, b, c in zip(outputs_class[:-1], outputs_coord[:-1] ,outputs_height[-1])]
+                                         for a, b, c in zip(outputs_class[:-1], outputs_coord[:-1] ,outputs_height[:-1])]
 
             print('\n\n*****************************')
             print('\n\n**********after supervision***************')

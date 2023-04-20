@@ -422,7 +422,11 @@ class HungarianMatcherDynamicK(nn.Module):
 
     def forward(self, outputs, targets):
         """ simOTA for detr"""
+        
         with torch.no_grad():
+            print('before dynamic matching in matcher class',outputs['pred_logits'].size())
+            print('before dynamic matching in matcher bboxes',outputs['pred_boxes'].size())
+            print('before dynamic matching in matcher h',outputs['pred_height'].size())           
             bs, num_queries = outputs["pred_logits"].shape[:2]
             # We flatten to compute the cost matrices in a batch
             if self.use_focal or self.use_fed_loss:
@@ -493,7 +497,9 @@ class HungarianMatcherDynamicK(nn.Module):
                 cost = self.cost_bbox * cost_bbox + self.cost_class * cost_class + self.cost_giou * cost_giou + 100.0 * (~is_in_boxes_and_center)
                 # cost = (cost_class + 3.0 * cost_giou + 100.0 * (~is_in_boxes_and_center))  # [num_query,num_gt]
                 cost[~fg_mask] = cost[~fg_mask] + 10000.0
-
+                print('after dynamic matching in matcher class',outputs['pred_logits'].size())
+                print('after dynamic matching in matcher bboxes',outputs['pred_boxes'].size())
+                print('after dynamic matching in matcher h',outputs['pred_height'].size())
                 # if bz_gtboxs.shape[0]>0:
                 indices_batchi, matched_qidx = self.dynamic_k_matching(cost, pair_wise_ious, bz_gtboxs.shape[0])
 
@@ -502,9 +508,9 @@ class HungarianMatcherDynamicK(nn.Module):
 
                 indices.append(indices_batchi)
                 matched_ids.append(matched_qidx)
-
-
-            print('after dynamic matching in matcher',outputs['pred_height'].size())
+            print('after dynamic matching in matcher class',outputs['pred_logits'].size())
+            print('after dynamic matching in matcher bboxes',outputs['pred_boxes'].size())
+            print('after dynamic matching in matcher h',outputs['pred_height'].size())
 
         return indices, matched_ids
 
