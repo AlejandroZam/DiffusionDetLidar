@@ -10,7 +10,7 @@ DiffusionDet model and criterion classes.
 """
 import torch
 import torch.nn.functional as F
-from torch import index_add, nn
+from torch import index_add, nn, tensor
 from fvcore.nn import sigmoid_focal_loss_jit
 import torchvision.ops as ops
 from .util import box_ops
@@ -259,10 +259,13 @@ class SetCriterionDynamicK(nn.Module):
 
         # print('outputs from model: ',src_heights)
         # print('ground truth: ',targets)
-
+        tgt_height_avg = {'0': 130.05,
+                          '3': 149.6,
+                          '5': 147.9
+                         }
         # print('indexes of batch: ',len(indices))
-        
-
+        # y = torch.empty_like(x).copy_(x) # method c
+        # heights_avg = torch.tensor([130.05, 149.6, 147.9])) #Without background class?
         pred_height_list = []
         pred_norm_height_list = []
         tgt_height_list = []
@@ -279,12 +282,39 @@ class SetCriterionDynamicK(nn.Module):
             # print('gt_multi_idx : ', gt_multi_idx)
             if len(gt_multi_idx) == 0:
                 continue
+            target_classes_o = targets[batch_idx]["labels"]
+            height_cls_ = target_classes_o[gt_multi_idx]
+
+            # print('class labels: ',height_cls_ )
+
+            height_cls_tensor = torch.zeros_like(height_cls_, dtype=torch.float32)
+
+            height_cls_tensor[height_cls_==0] = 130.05
+            height_cls_tensor[height_cls_==1] = 149.6            
+            height_cls_tensor[height_cls_==2] = 147.9
+
+  
+            # print('label avg height: ',height_cls_tensor )
+
             #predictions    
-            print('src heights: ', src_heights[batch_idx].size())
-            bz_src_heights = src_heights[batch_idx]    
-            print('length of predictions: ', len(bz_src_heights))
+            # print('src heights: ', src_heights[batch_idx].size())
+            bz_src_heights = src_heights[batch_idx]   
+            # print('length of predictions: ', bz_src_heights.size())
+            # print('type ',bz_src_heights[valid_query])
+
+            # print('h:', bz_src_heights[valid_query][:,0])
+
+            bz_src_heights_h = torch.exp(bz_src_heights[valid_query][:,0]) * height_cls_tensor
+      
+            bz_src_heights_z = bz_src_heights[valid_query][:,1] * height_cls_tensor + height_cls_tensor/2
+
+            # print('height norm',bz_src_heights_h)
+            # print('z norm',bz_src_heights_z)
+            deltas = torch.stack((bz_src_heights_h, bz_src_heights_z), dim=1)
+            print('deltas',deltas)
             #anno
             bz_target_heights = targets[batch_idx]['height']
+            # print('height truth',bz_target_heights[gt_multi_idx])
             # print('prediction: ' ,bz_src_heights)
             # print('annotation truth: ' ,bz_target_heights)
 
@@ -294,7 +324,7 @@ class SetCriterionDynamicK(nn.Module):
  
 
 
-            pred_height_list.append(bz_src_heights[valid_query])
+            pred_height_list.append(deltas)
             #normalize here if needed, normalize by average class height
             tgt_height_list.append(bz_target_heights[gt_multi_idx])
             #normalize here if needed, normalize by average class height
@@ -339,7 +369,7 @@ class SetCriterionDynamicK(nn.Module):
         return batch_idx, tgt_idx
 
     def get_loss(self, loss, outputs, targets, indices, num_boxes, **kwargs):
-        
+        print(self.w)
         loss_map = {
             'labels': self.loss_labels,
             'boxes': self.loss_boxes,
@@ -422,11 +452,11 @@ class HungarianMatcherDynamicK(nn.Module):
 
     def forward(self, outputs, targets):
         """ simOTA for detr"""
-        
+
         with torch.no_grad():
-            print('before dynamic matching in matcher class',outputs['pred_logits'].size())
-            print('before dynamic matching in matcher bboxes',outputs['pred_boxes'].size())
-            print('before dynamic matching in matcher h',outputs['pred_height'].size())           
+            # print('before dynamic matching in matcher class',outputs['pred_logits'].size())
+            # print('before dynamic matching in matcher bboxes',outputs['pred_boxes'].size())
+            # print('before dynamic matching in matcher h',outputs['pred_height'].size())           
             bs, num_queries = outputs["pred_logits"].shape[:2]
             # We flatten to compute the cost matrices in a batch
             if self.use_focal or self.use_fed_loss:
