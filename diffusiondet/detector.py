@@ -323,7 +323,7 @@ class DiffusionDet(nn.Module):
             t = t.squeeze(-1)
             x_boxes = x_boxes * images_whwh[:, None, :]
 
-            outputs_class, outputs_coord, outputs_height = self.head(features, x_boxes, t, None,None)
+            outputs_class, outputs_coord, outputs_height = self.head(features, x_boxes, t, None)
             # print('\n\n*****************************')
             # print('\n\n**********before supervision***************')
             # print('proposal head output for class: ',outputs_class.size())
@@ -347,6 +347,7 @@ class DiffusionDet(nn.Module):
 
 
             loss_dict = self.criterion(output, targets)
+            print('obtain weights from criterion dict_7')
             weight_dict = self.criterion.weight_dict
             for k in loss_dict.keys():
                 if k in weight_dict:

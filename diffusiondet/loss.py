@@ -269,7 +269,7 @@ class SetCriterionDynamicK(nn.Module):
         pred_height_list = []
         pred_norm_height_list = []
         tgt_height_list = []
-
+        print(self.weight_dict.keys())
         for batch_idx in range(batch_size):
 
             # print()
@@ -388,8 +388,9 @@ class SetCriterionDynamicK(nn.Module):
         outputs_without_aux = {k: v for k, v in outputs.items() if k != 'aux_outputs'}
 
         # Retrieve the matching between the outputs of the last layer and the targets
+        print('call matcher_1')
         indices, _ = self.matcher(outputs_without_aux, targets)
-
+        print('matcher done _5')
         # Compute the average number of target boxes accross all nodes, for normalization purposes
         num_boxes = sum(len(t["labels"]) for t in targets)
         num_boxes = torch.as_tensor([num_boxes], dtype=torch.float, device=next(iter(outputs.values())).device)
@@ -420,7 +421,7 @@ class SetCriterionDynamicK(nn.Module):
                     l_dict = self.get_loss(loss, aux_outputs, targets, indices, num_boxes, **kwargs)
                     l_dict = {k + f'_{i}': v for k, v in l_dict.items()}
                     losses.update(l_dict)
-
+        print('return loss _6')
         return losses
 
 
@@ -460,7 +461,7 @@ class HungarianMatcherDynamicK(nn.Module):
             bs, num_queries = outputs["pred_logits"].shape[:2]
             # We flatten to compute the cost matrices in a batch
             if self.use_focal or self.use_fed_loss:
-                
+                print('get class pred and gt_2')
                 out_prob = outputs["pred_logits"].sigmoid()  # [batch_size, num_queries, num_classes]
                 out_bbox = outputs["pred_boxes"]  # [batch_size,  num_queries, 4]
             else:
@@ -476,6 +477,7 @@ class HungarianMatcherDynamicK(nn.Module):
                 bz_out_prob = out_prob[batch_idx]
                 bz_tgt_ids = targets[batch_idx]["labels"]
                 num_insts = len(bz_tgt_ids)
+                print('get bboxes pred and gt_3')
                 if num_insts == 0:  # empty object in key frame
                     non_valid = torch.zeros(bz_out_prob.shape[0]).to(bz_out_prob) > 0
                     indices_batchi = (non_valid, torch.arange(0, 0).to(bz_out_prob))
@@ -524,6 +526,7 @@ class HungarianMatcherDynamicK(nn.Module):
                 cost_giou = -generalized_box_iou(bz_boxes, bz_gtboxs_abs_xyxy)
 
                 # Final cost matrix
+                print('sum of total loss_4')
                 cost = self.cost_bbox * cost_bbox + self.cost_class * cost_class + self.cost_giou * cost_giou + 100.0 * (~is_in_boxes_and_center)
                 # cost = (cost_class + 3.0 * cost_giou + 100.0 * (~is_in_boxes_and_center))  # [num_query,num_gt]
                 cost[~fg_mask] = cost[~fg_mask] + 10000.0
