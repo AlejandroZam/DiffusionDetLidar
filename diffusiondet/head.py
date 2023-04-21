@@ -300,12 +300,12 @@ class RCNNHead(nn.Module):
         bboxes_deltas = self.bboxes_delta(reg_feature)
         pred_bboxes = self.apply_deltas(bboxes_deltas, bboxes.view(-1, 4))
 
-        print('\n\n ************************')
-        print('class logits: ', class_logits.size())
-        print('bboxes_deltas: ',bboxes_deltas.size())
-        print('bboxes logits: ', pred_bboxes.size())
-        print('height logits: ', height_logits.size())
-        print('\n\n ************************')
+        # print('\n\n ************************')
+        # print('class logits: ', class_logits.size())
+        # print('bboxes_deltas: ',bboxes_deltas.size())
+        # print('bboxes logits: ', pred_bboxes.size())
+        # print('height logits: ', height_logits.size())
+        # print('\n\n ************************')
         
         return class_logits.view(N, nr_boxes, -1), pred_bboxes.view(N, nr_boxes, -1), obj_features, height_logits.view(N,nr_boxes,-1)
 

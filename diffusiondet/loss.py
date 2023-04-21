@@ -93,7 +93,7 @@ class SetCriterionDynamicK(nn.Module):
         targets dicts must contain the key "labels" containing a tensor of dim [nb_target_boxes]
         """
 
-        print('class loss')
+        #print('class loss')
         assert 'pred_logits' in outputs
         src_logits = outputs['pred_logits']
         batch_size = len(targets)
@@ -118,7 +118,7 @@ class SetCriterionDynamicK(nn.Module):
             # print('bz_src_logits: ',bz_src_logits)
             target_classes_o = targets[batch_idx]["labels"]
             target_classes[batch_idx, valid_query] = target_classes_o[gt_multi_idx]
-            print('length of predictions: ', len(bz_src_logits))
+            #print('length of predictions: ', len(bz_src_logits))
             src_logits_list.append(bz_src_logits[valid_query])
             target_classes_o_list.append(target_classes_o[gt_multi_idx])
 
@@ -137,11 +137,11 @@ class SetCriterionDynamicK(nn.Module):
             target_classes_onehot = target_classes_onehot.flatten(0, 1)
 
 
-            print('src_h: ', src_logits.size())
+            #print('src_h: ', src_logits.size())
  
-            print('target_h: ', target_classes_onehot.size())
+            #print('target_h: ', target_classes_onehot.size())
 
-            print('num_h: ', num_boxes)
+            #print('num_h: ', num_boxes)
 
 
 
@@ -182,7 +182,7 @@ class SetCriterionDynamicK(nn.Module):
         assert 'pred_boxes' in outputs
         # idx = self._get_src_permutation_idx(indices)
         src_boxes = outputs['pred_boxes']
-        print('boxes loss')
+        #print('boxes loss')
 
    
 
@@ -203,7 +203,7 @@ class SetCriterionDynamicK(nn.Module):
                 continue
             bz_image_whwh = targets[batch_idx]['image_size_xyxy']
             bz_src_boxes = src_boxes[batch_idx]
-            print('length of predictions: ', len(bz_src_boxes))
+            # print('length of predictions: ', len(bz_src_boxes))
             bz_target_boxes = targets[batch_idx]["boxes"]  # normalized (cx, cy, w, h)
             bz_target_boxes_xyxy = targets[batch_idx]["boxes_xyxy"]  # absolute (x1, y1, x2, y2)
 
@@ -222,11 +222,11 @@ class SetCriterionDynamicK(nn.Module):
 
 
   
-            print('src_h: ', src_boxes.size())
+            # print('src_h: ', src_boxes.size())
  
-            print('target_h: ', target_boxes.size())
+            # print('target_h: ', target_boxes.size())
 
-            print('num_h: ', num_boxes)
+            # print('num_h: ', num_boxes)
 
 
             losses = {}
@@ -252,7 +252,7 @@ class SetCriterionDynamicK(nn.Module):
            The target boxes are expected in format (center_x, center_y, w, h), normalized by the image size.
         """
 
-        print('height loss')
+        # print('height loss')
         assert 'pred_height' in outputs
         src_heights= outputs['pred_height']
         batch_size = len(targets)
@@ -272,7 +272,7 @@ class SetCriterionDynamicK(nn.Module):
 
         for batch_idx in range(batch_size):
 
-            print()
+            # print()
 
 
             valid_query = indices[batch_idx][0]
@@ -311,7 +311,7 @@ class SetCriterionDynamicK(nn.Module):
             # print('height norm',bz_src_heights_h)
             # print('z norm',bz_src_heights_z)
             deltas = torch.stack((bz_src_heights_h, bz_src_heights_z), dim=1)
-            print('deltas',deltas)
+            #print('deltas',deltas)
             #anno
             bz_target_heights = targets[batch_idx]['height']
             # print('height truth',bz_target_heights[gt_multi_idx])
@@ -334,11 +334,11 @@ class SetCriterionDynamicK(nn.Module):
         if len(pred_height_list) != 0:
             
             src_h = torch.cat(pred_height_list)
-            print('src_h: ', src_h.size())
+            #print('src_h: ', src_h.size())
             target_h = torch.cat(tgt_height_list)
-            print('target_h: ', target_h.size())
+            #print('target_h: ', target_h.size())
             num_h = src_h.shape[0]
-            print('num_h: ', num_h)
+            #print('num_h: ', num_h)
             losses = {}
             # require normalized (x1, y1, x2, y2)
             loss_height = F.l1_loss(src_h, target_h, reduction='none')
@@ -347,7 +347,7 @@ class SetCriterionDynamicK(nn.Module):
 
             losses['loss_height'] = loss_height.sum() / num_boxes
 
-            print('loss for height: ',losses['loss_height'])
+            # print('loss for height: ',losses['loss_height'])
 
 
         else:
@@ -369,7 +369,7 @@ class SetCriterionDynamicK(nn.Module):
         return batch_idx, tgt_idx
 
     def get_loss(self, loss, outputs, targets, indices, num_boxes, **kwargs):
-        print(self.w)
+
         loss_map = {
             'labels': self.loss_labels,
             'boxes': self.loss_boxes,
@@ -400,7 +400,7 @@ class SetCriterionDynamicK(nn.Module):
         # Compute all the requested losses
         losses = {}
 
-        print(outputs.keys())
+        # print(outputs.keys())
 
         for loss in self.losses:
             losses.update(self.get_loss(loss, outputs, targets, indices, num_boxes))
@@ -527,9 +527,9 @@ class HungarianMatcherDynamicK(nn.Module):
                 cost = self.cost_bbox * cost_bbox + self.cost_class * cost_class + self.cost_giou * cost_giou + 100.0 * (~is_in_boxes_and_center)
                 # cost = (cost_class + 3.0 * cost_giou + 100.0 * (~is_in_boxes_and_center))  # [num_query,num_gt]
                 cost[~fg_mask] = cost[~fg_mask] + 10000.0
-                print('after dynamic matching in matcher class',outputs['pred_logits'].size())
-                print('after dynamic matching in matcher bboxes',outputs['pred_boxes'].size())
-                print('after dynamic matching in matcher h',outputs['pred_height'].size())
+                # print('after dynamic matching in matcher class',outputs['pred_logits'].size())
+                # print('after dynamic matching in matcher bboxes',outputs['pred_boxes'].size())
+                # print('after dynamic matching in matcher h',outputs['pred_height'].size())
                 # if bz_gtboxs.shape[0]>0:
                 indices_batchi, matched_qidx = self.dynamic_k_matching(cost, pair_wise_ious, bz_gtboxs.shape[0])
 
@@ -538,9 +538,9 @@ class HungarianMatcherDynamicK(nn.Module):
 
                 indices.append(indices_batchi)
                 matched_ids.append(matched_qidx)
-            print('after dynamic matching in matcher class',outputs['pred_logits'].size())
-            print('after dynamic matching in matcher bboxes',outputs['pred_boxes'].size())
-            print('after dynamic matching in matcher h',outputs['pred_height'].size())
+            # print('after dynamic matching in matcher class',outputs['pred_logits'].size())
+            # print('after dynamic matching in matcher bboxes',outputs['pred_boxes'].size())
+            # print('after dynamic matching in matcher h',outputs['pred_height'].size())
 
         return indices, matched_ids
 
