@@ -347,7 +347,7 @@ class DiffusionDet(nn.Module):
 
 
             loss_dict = self.criterion(output, targets)
-            print('obtain weights from criterion dict_7')
+            # print('obtain weights from criterion dict_7')
             weight_dict = self.criterion.weight_dict
             for k in loss_dict.keys():
                 if k in weight_dict:

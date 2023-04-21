@@ -269,7 +269,7 @@ class SetCriterionDynamicK(nn.Module):
         pred_height_list = []
         pred_norm_height_list = []
         tgt_height_list = []
-        print(self.weight_dict.keys())
+        # print(self.weight_dict.keys())
         for batch_idx in range(batch_size):
 
             # print()
@@ -287,33 +287,50 @@ class SetCriterionDynamicK(nn.Module):
 
             # print('class labels: ',height_cls_ )
 
-            height_cls_tensor = torch.zeros_like(height_cls_, dtype=torch.float32)
+            height_cls_tensor = torch.ones_like(height_cls_, dtype=torch.float32)
 
             height_cls_tensor[height_cls_==0] = 130.05
             height_cls_tensor[height_cls_==1] = 149.6            
             height_cls_tensor[height_cls_==2] = 147.9
+            height_cls_tensor[height_cls_==3] = 1.0
 
+  
   
             # print('label avg height: ',height_cls_tensor )
 
             #predictions    
             # print('src heights: ', src_heights[batch_idx].size())
-            bz_src_heights = src_heights[batch_idx]   
+            # bz_src_heights = src_heights[batch_idx]   
             # print('length of predictions: ', bz_src_heights.size())
             # print('type ',bz_src_heights[valid_query])
 
             # print('h:', bz_src_heights[valid_query][:,0])
 
-            bz_src_heights_h = torch.exp(bz_src_heights[valid_query][:,0]) * height_cls_tensor
+            # bz_src_heights_h = torch.exp(bz_src_heights[valid_query][:,0]) * height_cls_tensor
       
-            bz_src_heights_z = bz_src_heights[valid_query][:,1] * height_cls_tensor + height_cls_tensor/2
+            # bz_src_heights_z = bz_src_heights[valid_query][:,1] * height_cls_tensor + height_cls_tensor/2
 
             # print('height norm',bz_src_heights_h)
             # print('z norm',bz_src_heights_z)
-            deltas = torch.stack((bz_src_heights_h, bz_src_heights_z), dim=1)
-            #print('deltas',deltas)
+            # deltas = torch.stack((bz_src_heights_h, bz_src_heights_z), dim=1)
+            # print('deltas',deltas)
             #anno
             bz_target_heights = targets[batch_idx]['height']
+            print()
+            print('***************************************')
+            print('gt height: ',targets[batch_idx]['height'])
+            print('gt label: ',height_cls_)
+            print('indexes: ',height_cls_tensor)
+
+            bz_target_h = torch.log(bz_target_heights[:,0] / height_cls_tensor)
+
+            bz_target_z = (bz_target_heights[:,1] - height_cls_tensor/2. ) / height_cls_tensor
+
+
+
+            delta = torch.stack((bz_target_h, bz_target_z), dim=1)
+
+
             # print('height truth',bz_target_heights[gt_multi_idx])
             # print('prediction: ' ,bz_src_heights)
             # print('annotation truth: ' ,bz_target_heights)
@@ -321,10 +338,14 @@ class SetCriterionDynamicK(nn.Module):
 
             # print(self.weight_dict)
 
+
+            print('src pred: ',src_heights[batch_idx][valid_query])
+
+            print('gt delta: ', delta)
  
+            print('***************************************')
 
-
-            pred_height_list.append(deltas)
+            pred_height_list.append(src_heights[batch_idx][valid_query])
             #normalize here if needed, normalize by average class height
             tgt_height_list.append(bz_target_heights[gt_multi_idx])
             #normalize here if needed, normalize by average class height
@@ -384,13 +405,18 @@ class SetCriterionDynamicK(nn.Module):
              outputs: dict of tensors, see the output specification of the model for the format
              targets: list of dicts, such that len(targets) == batch_size.
                       The expected keys in each dict depends on the losses applied, see each loss' doc
+
         """
+
+
+        # print('output keys:', outputs.keys())
+
         outputs_without_aux = {k: v for k, v in outputs.items() if k != 'aux_outputs'}
 
         # Retrieve the matching between the outputs of the last layer and the targets
-        print('call matcher_1')
+        #print('call matcher_1')
         indices, _ = self.matcher(outputs_without_aux, targets)
-        print('matcher done _5')
+        #print('matcher done _5')
         # Compute the average number of target boxes accross all nodes, for normalization purposes
         num_boxes = sum(len(t["labels"]) for t in targets)
         num_boxes = torch.as_tensor([num_boxes], dtype=torch.float, device=next(iter(outputs.values())).device)
@@ -402,8 +428,12 @@ class SetCriterionDynamicK(nn.Module):
         losses = {}
 
         # print(outputs.keys())
+        
+
+
 
         for loss in self.losses:
+            # print('loss:', loss)
             losses.update(self.get_loss(loss, outputs, targets, indices, num_boxes))
 
         # In case of auxiliary losses, we repeat this process with the output of each intermediate layer.
@@ -421,7 +451,7 @@ class SetCriterionDynamicK(nn.Module):
                     l_dict = self.get_loss(loss, aux_outputs, targets, indices, num_boxes, **kwargs)
                     l_dict = {k + f'_{i}': v for k, v in l_dict.items()}
                     losses.update(l_dict)
-        print('return loss _6')
+        # print('return loss _6')
         return losses
 
 
@@ -461,7 +491,7 @@ class HungarianMatcherDynamicK(nn.Module):
             bs, num_queries = outputs["pred_logits"].shape[:2]
             # We flatten to compute the cost matrices in a batch
             if self.use_focal or self.use_fed_loss:
-                print('get class pred and gt_2')
+                # print('get class pred and gt_2')
                 out_prob = outputs["pred_logits"].sigmoid()  # [batch_size, num_queries, num_classes]
                 out_bbox = outputs["pred_boxes"]  # [batch_size,  num_queries, 4]
             else:
@@ -477,7 +507,7 @@ class HungarianMatcherDynamicK(nn.Module):
                 bz_out_prob = out_prob[batch_idx]
                 bz_tgt_ids = targets[batch_idx]["labels"]
                 num_insts = len(bz_tgt_ids)
-                print('get bboxes pred and gt_3')
+                # print('get bboxes pred and gt_3')
                 if num_insts == 0:  # empty object in key frame
                     non_valid = torch.zeros(bz_out_prob.shape[0]).to(bz_out_prob) > 0
                     indices_batchi = (non_valid, torch.arange(0, 0).to(bz_out_prob))
@@ -526,7 +556,7 @@ class HungarianMatcherDynamicK(nn.Module):
                 cost_giou = -generalized_box_iou(bz_boxes, bz_gtboxs_abs_xyxy)
 
                 # Final cost matrix
-                print('sum of total loss_4')
+                # print('sum of total loss_4')
                 cost = self.cost_bbox * cost_bbox + self.cost_class * cost_class + self.cost_giou * cost_giou + 100.0 * (~is_in_boxes_and_center)
                 # cost = (cost_class + 3.0 * cost_giou + 100.0 * (~is_in_boxes_and_center))  # [num_query,num_gt]
                 cost[~fg_mask] = cost[~fg_mask] + 10000.0

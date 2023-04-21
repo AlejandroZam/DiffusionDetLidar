@@ -205,7 +205,7 @@ class RCNNHead(nn.Module):
 
         # block time mlp
         self.block_time_mlp = nn.Sequential(nn.SiLU(), nn.Linear(d_model * 4, d_model * 2))
-        print('size of model input: ',d_model)
+        # print('size of model input: ',d_model)
         # cls.
         num_cls = cfg.MODEL.DiffusionDet.NUM_CLS
         cls_module = list()
@@ -224,12 +224,12 @@ class RCNNHead(nn.Module):
             reg_module.append(nn.ReLU(inplace=True))
         self.reg_module = nn.ModuleList(reg_module)
 
-        # h_module = list()
+        reg_h_module = list()
         # for _ in range(num_reg):
-        #     reg_module.append(nn.Linear(d_model, d_model, False))
-        #     reg_module.append(nn.LayerNorm(d_model))
-        #     reg_module.append(nn.ReLU(inplace=True))
-        # self.reg_module = nn.ModuleList(reg_module)
+        reg_h_module.append(nn.Linear(d_model, d_model, False))
+        reg_h_module.append(nn.LayerNorm(d_model))
+        reg_h_module.append(nn.ReLU(inplace=True))
+        self.reg_h_module = nn.ModuleList(reg_h_module)
 
         
         # pred.
@@ -256,8 +256,8 @@ class RCNNHead(nn.Module):
         """
         # print(bboxes.size())
         N, nr_boxes = bboxes.shape[:2]
-        print('number of input boxes: ', N)
-        print('number of nr_boxes ', nr_boxes)
+        # print('number of input boxes: ', N)
+        # print('number of nr_boxes ', nr_boxes)
         # roi_feature.
         proposal_boxes = list()
         for b in range(N):
@@ -267,44 +267,44 @@ class RCNNHead(nn.Module):
         if pro_features is None:
             pro_features = roi_features.view(N, nr_boxes, self.d_model, -1).mean(-1)
 
-        print('size of roi features before permute: ', roi_features.size())
+        # print('size of roi features before permute: ', roi_features.size())
         roi_features = roi_features.view(N * nr_boxes, self.d_model, -1).permute(2, 0, 1)
-        print('size of roi features after permute: ', roi_features.size())
+        # print('size of roi features after permute: ', roi_features.size())
         # self_att.
 
-        print('size of pro features before permute: ', pro_features.size())
+        # print('size of pro features before permute: ', pro_features.size())
         pro_features = pro_features.view(N, nr_boxes, self.d_model).permute(1, 0, 2)
         pro_features2 = self.self_attn(pro_features, pro_features, value=pro_features)[0]
         pro_features = pro_features + self.dropout1(pro_features2)
         pro_features = self.norm1(pro_features)
-        print('size of pro features after permute: ', pro_features.size())
+        # print('size of pro features after permute: ', pro_features.size())
 
         # inst_interact.
-        print('size of pro features before converting: ', pro_features.size())
+        # print('size of pro features before converting: ', pro_features.size())
         pro_features = pro_features.view(nr_boxes, N, self.d_model).permute(1, 0, 2).reshape(1, N * nr_boxes, self.d_model)
         pro_features2 = self.inst_interact(pro_features, roi_features)
         pro_features = pro_features + self.dropout2(pro_features2)
         obj_features = self.norm2(pro_features)
-        print('size of obj features after converting: ', obj_features.size())
+        # print('size of obj features after converting: ', obj_features.size())
 
         # obj_feature.
-        print('size of obj features before converting: ', pro_features.size())
+        # print('size of obj features before converting: ', pro_features.size())
         obj_features2 = self.linear2(self.dropout(self.activation(self.linear1(obj_features))))
         obj_features = obj_features + self.dropout3(obj_features2)
         obj_features = self.norm3(obj_features)
-        print('size of obj features after converting: ', obj_features.size())
+        # print('size of obj features after converting: ', obj_features.size())
 
-        print('object features:',obj_features.size())
+        # print('object features:',obj_features.size())
 
         fc_feature = obj_features.transpose(0, 1).reshape(N * nr_boxes, -1)
 
-        print('fc features:',fc_feature.size())
+        # print('fc features:',fc_feature.size())
 
         scale_shift = self.block_time_mlp(time_emb)
         scale_shift = torch.repeat_interleave(scale_shift, nr_boxes, dim=0)
         scale, shift = scale_shift.chunk(2, dim=1)
         fc_feature = fc_feature * (scale + 1) + shift
-        print('fc features * scale + shift:',fc_feature.size())
+        # print('fc features * scale + shift:',fc_feature.size())
 
         cls_feature = fc_feature.clone()
         height_feature = fc_feature.clone()
@@ -317,7 +317,7 @@ class RCNNHead(nn.Module):
         for reg_layer in self.reg_module:
             reg_feature = reg_layer(reg_feature)
         # trying regression for bbox
-        for reg_layer in self.reg_module:
+        for reg_layer in self.reg_h_module:
               height_reg_feature = reg_layer(height_feature)
 
         # class_logits = self.class_logits(cls_feature)
@@ -330,7 +330,7 @@ class RCNNHead(nn.Module):
 
 
         height_deltas = self.height_delta(height_reg_feature)
-        print('height deltas: ', height_deltas)
+        # print('height deltas: ', height_deltas)
   
 
         bboxes_deltas = self.bboxes_delta(reg_feature)
@@ -343,7 +343,7 @@ class RCNNHead(nn.Module):
         # print('class logits: ', class_logits.size())
         # print('bboxes_deltas: ',bboxes_deltas.size())
         # print('bboxes logits: ', pred_bboxes.size())
-        # print('height logits: ', height_logits.size())
+        # print('height logits: ', height_deltas.size())
         # print('\n\n ************************')
         
         return class_logits.view(N, nr_boxes, -1), pred_bboxes.view(N, nr_boxes, -1), obj_features, height_deltas.view(N,nr_boxes,-1)
@@ -373,7 +373,7 @@ class RCNNHead(nn.Module):
                 box transformations for the single box boxes[i].
             boxes (Tensor): boxes to transform, of shape (N, 4)
         """
-        print('boxes weights: ', boxes.size())
+        # print('boxes weights: ', boxes.size())
         boxes = boxes.to(deltas.dtype)
  
 
