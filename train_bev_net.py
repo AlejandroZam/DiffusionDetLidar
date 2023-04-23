@@ -272,6 +272,7 @@ def setup(args):
     cfg.DATALOADER.NUM_WORKERS = 2
     cfg.DATASETS.TRAIN = ("kitti_train",)
     cfg.MODEL.DiffusionDet.L1_HEIGHT_WEIGHT= (5.0, 0.5, 10.0)
+    cfg.MODEL.RPN.BBOX_REG_WEIGHTS = (1.0, 1.0, 1.0, 1.0)
     # cfg.DATASETS.TEST = ("kitti_val")
     cfg.SOLVER.BASE_LR = 0.00020  # pick a good LR
     cfg.SOLVER.MAX_ITER = 100 #5000    # 300 iterations seems good enough for this toy dataset; you will need to train longer for a practical dataset
