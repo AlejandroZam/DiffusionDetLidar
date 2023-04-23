@@ -274,7 +274,7 @@ def setup(args):
     cfg.MODEL.DiffusionDet.L1_HEIGHT_WEIGHT= (5.0, 0.5, 10.0)
     # cfg.DATASETS.TEST = ("kitti_val")
     cfg.SOLVER.BASE_LR = 0.00020  # pick a good LR
-    cfg.SOLVER.MAX_ITER = 5000 #5000    # 300 iterations seems good enough for this toy dataset; you will need to train longer for a practical dataset
+    cfg.SOLVER.MAX_ITER = 100 #5000    # 300 iterations seems good enough for this toy dataset; you will need to train longer for a practical dataset
     cfg.SOLVER.STEPS = []        # do not decay learning rate
     cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128  # The "RoIHead batch size". 128 is faster, and good enough for this toy dataset (default: 512)
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = 3  # only has one class (ballon). (see https://detectron2.readthedocs.io/tutorials/datasets.html#update-the-config-for-new-datasets)  
