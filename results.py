@@ -139,7 +139,8 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
         bv_ground = bv_ground.reshape(bv_image.shape[0],bv_image.shape[1],1)
     
     # Calibration for 3D
-    calib_file = os.path.join(kitti_calib_path,filename[-10:].split('.png')[0]+'.txt')
+ 
+    calib_file = os.path.join(kitti_calib_path.replace('/training',''),filename[-10:].split('.png')[0]+'.txt')
 
     # Refiner for 3D
     refiner = BirdviewDetectionRefiner(bv_image, bv_ground, bvres, velodyne_h, only_front)
@@ -267,6 +268,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
         c = 0
 
         sample_idx = range(img2show) if img2show != 0 else [-1]
+        print('sample indx: ',sample_idx)
         logger.info("Showing {} predictions".format(str(img2show)))
         ann_outdir = os.path.join(cfg.OUTPUT_DIR,'annotations',eval_folder)
         if not os.path.exists(ann_outdir):
@@ -283,37 +285,67 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 outputs = predictor(im)
                 # print('outputs:',outputs)
                 list_anns, obj_anns, instances = prepare_for_coco_detection_KITTI(outputs["instances"].to("cpu"), ann_outdir, d["file_name"], write, kitti_calib_path, nclasses, cfg.VIEWPOINT, cfg.VP_BINS, cfg.VIEWPOINT_RESIDUAL, cfg.ROTATED_BOX_TRAINING, cfg.HEIGHT_TRAINING)
-                kitti_results.append(list_anns)
+
+
+                fixed_list_anns = []
+                for idx,item in enumerate(list_anns):
+                  # print(item)
+                  if item[0] == 'Van':
+                    list_anns[idx][0] = 'Pedestrian'
+                    fixed_list_anns.append(list_anns[idx])
+                  elif item[0] == 'Truck':
+                    list_anns[idx][0] = 'Cyclist'
+                    fixed_list_anns.append(list_anns[idx])
+                  elif item[0] == 'Car':
+                    fixed_list_anns.append(list_anns[idx])
+
+                for obj in obj_anns:
+                  if obj.kind_name == 'Van':
+                    obj.kind_name = 'Pedestrian'
+           
+                  elif obj.kind_name == 'Truck':
+                    obj.kind_name = 'Cyclist'
+    
+
+
+                #kitti_results.append(list_anns)
+                kitti_results.append(fixed_list_anns)
             else:
+                print('why we here')
                 is_kitti_ann=True
                 with open(file,'r') as f:
                     list_anns = f.read().splitlines()
                 kitti_results.append([anns.split(' ') for anns in list_anns] if list_anns else [])
                 for ann in list_anns:
                     obj_anns.append(Object3d(ann))
-            
+            print('c value: ', c)
             if c in sample_idx:
+                print('c in smaple idx')
                 # Change BV aspect
                 nonzero = np.where(im>0)
                 im[nonzero]=255-im[nonzero]
                 im=cv2.bitwise_not(im)
 
                 kitti_im = cv2.imread(os.path.join(kitti_im_path,d["file_name"][-10:]))
-                calib_file = os.path.join(kitti_calib_path,d["file_name"][-10:].split('.png')[0]+'.txt')
+                calib_file = os.path.join(kitti_calib_path.replace('/training',''),d["file_name"][-10:].split('.png')[0]+'.txt')
                 # Show obstacles
+                print('is kitti ann: ',is_kitti_ann)
                 for i, obj in enumerate(obj_anns):
+                    if i == 10:
+                      break
                     kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)
-                cv2.imshow('image',kitti_im)
-                cv2.imshow('bv_image',im)
+                # cv2.imshow('image',kitti_im)
+                # cv2.imshow('bv_image',im)
                 if save_img:
                     im_outdir = os.path.join(cfg.OUTPUT_DIR,'images')
                     if not os.path.exists(im_outdir):
                         os.makedirs(im_outdir)
                     cv2.imwrite(os.path.join(im_outdir,'3D_'+d["file_name"][-10:]), kitti_im)
                     cv2.imwrite(os.path.join(im_outdir,'BEV_'+d["file_name"][-10:]), im)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
+                # cv2.waitKey(0)
+                # cv2.destroyAllWindows()
             elif c > max(sample_idx) and not write:
+                print('c value bigger than max index: ',c)
                 break
 
 if __name__ == '__main__':
