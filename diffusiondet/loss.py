@@ -12,6 +12,7 @@ import torch
 import torch.nn.functional as F
 from torch import index_add, nn, tensor
 from fvcore.nn import sigmoid_focal_loss_jit
+from fvcore.nn import smooth_l1_loss
 import torchvision.ops as ops
 from .util import box_ops
 from .util.misc import get_world_size, is_dist_avail_and_initialized
@@ -364,18 +365,18 @@ class SetCriterionDynamicK(nn.Module):
         if len(pred_height_list) != 0:
             
             src_h = torch.cat(pred_height_list)
-            #print('src_h: ', src_h.size())
+            # print('src_h: ', src_h.size())
             target_h = torch.cat(tgt_height_list)
-            #print('target_h: ', target_h.size())
+            # print('target_h: ', target_h.size())
             num_h = src_h.shape[0]
             #print('num_h: ', num_h)
             losses = {}
             # require normalized (x1, y1, x2, y2)
-            loss_height = F.l1_loss(src_h, target_h, reduction='none')
+            loss_height = F.smooth_l1_loss(src_h, target_h, reduction='sum')
 
 
 
-            losses['loss_height'] = loss_height.sum() / num_boxes
+            losses['loss_height'] = loss_height / num_boxes
 
             # print('loss for height: ',losses['loss_height'])
 
