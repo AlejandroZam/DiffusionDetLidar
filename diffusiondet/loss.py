@@ -272,27 +272,32 @@ class SetCriterionDynamicK(nn.Module):
         # print(self.weight_dict.keys())
         for batch_idx in range(batch_size):
 
+  
             # print()
-
-
+            # print('***************************************')
+            # print('labels: ',targets[batch_idx])
             valid_query = indices[batch_idx][0]
-            # print('valid query len: ', len(valid_query))
+            # print('valid query len: ', valid_query)
             # print('valid query mat: ', valid_query.nonzero())
             gt_multi_idx = indices[batch_idx][1]
             # print('gt_multi_idx : ', gt_multi_idx)
             if len(gt_multi_idx) == 0:
                 continue
             target_classes_o = targets[batch_idx]["labels"]
+            # print('target classes: ', target_classes_o)
             height_cls_ = target_classes_o[gt_multi_idx]
 
             # print('class labels: ',height_cls_ )
 
             height_cls_tensor = torch.ones_like(height_cls_, dtype=torch.float32)
 
+            # print('boolean tensor of cls: ', height_cls_tensor)
+
+
             height_cls_tensor[height_cls_==0] = 130.05
-            height_cls_tensor[height_cls_==1] = 149.6            
-            height_cls_tensor[height_cls_==2] = 147.9
-            height_cls_tensor[height_cls_==3] = 1.0
+            height_cls_tensor[height_cls_==3] = 149.6            
+            height_cls_tensor[height_cls_==5] = 147.9
+          
 
   
   
@@ -315,12 +320,16 @@ class SetCriterionDynamicK(nn.Module):
             # deltas = torch.stack((bz_src_heights_h, bz_src_heights_z), dim=1)
             # print('deltas',deltas)
             #anno
-            bz_target_heights = targets[batch_idx]['height']
-            print()
-            print('***************************************')
-            print('gt height: ',targets[batch_idx]['height'])
-            print('gt label: ',height_cls_)
-            print('indexes: ',height_cls_tensor)
+            bz_target_heights = targets[batch_idx]['height'][gt_multi_idx]
+
+            # print('gt height: ',targets[batch_idx]['height'][gt_multi_idx])
+            # print('gt height size: ',targets[batch_idx]['height'][gt_multi_idx].size())
+
+            # print('gt label: ',height_cls_)
+            # print('gt label size: ',height_cls_.size())
+
+            # print('indexes: ',height_cls_tensor)
+            # print('indexes size:  ',height_cls_tensor.size())
 
             bz_target_h = torch.log(bz_target_heights[:,0] / height_cls_tensor)
 
@@ -339,15 +348,15 @@ class SetCriterionDynamicK(nn.Module):
             # print(self.weight_dict)
 
 
-            print('src pred: ',src_heights[batch_idx][valid_query])
+            # print('src pred: ',src_heights[batch_idx][valid_query])
 
-            print('gt delta: ', delta)
+            # print('gt delta: ', delta)
  
-            print('***************************************')
+            # print('***************************************')
 
             pred_height_list.append(src_heights[batch_idx][valid_query])
             #normalize here if needed, normalize by average class height
-            tgt_height_list.append(bz_target_heights[gt_multi_idx])
+            tgt_height_list.append(delta)
             #normalize here if needed, normalize by average class height
 
 
