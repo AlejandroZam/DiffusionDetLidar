@@ -15,7 +15,9 @@ import torch.nn.functional as F
 from torch import nn
 
 from detectron2.layers import batched_nms
-from detectron2.modeling import META_ARCH_REGISTRY, build_backbone, detector_postprocess
+from detectron2.modeling import META_ARCH_REGISTRY, build_backbone #, detector_postprocess
+from .util.postprocessing import detector_postprocess
+
 
 from detectron2.structures import Boxes, ImageList, Instances
 
@@ -174,7 +176,7 @@ class DiffusionDet(nn.Module):
         x_boxes = ((x_boxes / self.scale) + 1) / 2
         x_boxes = box_cxcywh_to_xyxy(x_boxes)
         x_boxes = x_boxes * images_whwh[:, None, :]
-        outputs_class, outputs_coord = self.head(backbone_feats, x_boxes, t, None)
+        outputs_class, outputs_coord, outputs_height = self.head(backbone_feats, x_boxes, t, None)
 
         x_start = outputs_coord[-1]  # (batch, num_proposals, 4) predict boxes: absolute coordinates (x1, y1, x2, y2)
         x_start = x_start / images_whwh[:, None, :]
@@ -183,7 +185,7 @@ class DiffusionDet(nn.Module):
         x_start = torch.clamp(x_start, min=-1 * self.scale, max=self.scale)
         pred_noise = self.predict_noise_from_start(x, t, x_start)
 
-        return ModelPrediction(pred_noise, x_start), outputs_class, outputs_coord
+        return ModelPrediction(pred_noise, x_start), outputs_class, outputs_coord, outputs_height
 
     @torch.no_grad()
     def ddim_sample(self, batched_inputs, backbone_feats, images_whwh, images, clip_denoised=True, do_postprocess=True):
@@ -203,8 +205,8 @@ class DiffusionDet(nn.Module):
         for time, time_next in time_pairs:
             time_cond = torch.full((batch,), time, device=self.device, dtype=torch.long)
             self_cond = x_start if self.self_condition else None
-            print('model predictions')
-            preds, outputs_class, outputs_coord = self.model_predictions(backbone_feats, images_whwh, img, time_cond,
+            # print('model predictions')
+            preds, outputs_class, outputs_coord, outputs_height = self.model_predictions(backbone_feats, images_whwh, img, time_cond,
                                                                          self_cond, clip_x_start=clip_denoised)
             pred_noise, x_start = preds.pred_noise, preds.pred_x_start
 
@@ -247,6 +249,7 @@ class DiffusionDet(nn.Module):
                 ensemble_coord.append(box_pred_per_image)
 
         if self.use_ensemble and self.sampling_timesteps > 1:
+            # print('ensemble bs')
             box_pred_per_image = torch.cat(ensemble_coord, dim=0)
             scores_per_image = torch.cat(ensemble_score, dim=0)
             labels_per_image = torch.cat(ensemble_label, dim=0)
@@ -262,11 +265,14 @@ class DiffusionDet(nn.Module):
             result.pred_classes = labels_per_image
             results = [result]
         else:
-            output = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1]}
+            # print('ideally here')
+            output = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1],'pred_height': outputs_height[-1] }
             box_cls = output["pred_logits"]
             box_pred = output["pred_boxes"]
-            results = self.inference(box_cls, box_pred, images.image_sizes)
+            height_pred = output["pred_height"]
+            results = self.inference(box_cls, box_pred, height_pred,images.image_sizes)
         if do_postprocess:
+            # print('post processing')
             processed_results = []
             for results_per_image, input_per_image, image_size in zip(results, batched_inputs, images.image_sizes):
                 height = input_per_image.get("height", image_size[0])
@@ -453,7 +459,7 @@ class DiffusionDet(nn.Module):
 
         return new_targets, torch.stack(diffused_boxes), torch.stack(noises), torch.stack(ts)
 
-    def inference(self, box_cls, box_pred, image_sizes):
+    def inference(self, box_cls, box_pred,height_pred, image_sizes):
         """
         Arguments:
             box_cls (Tensor): tensor of shape (batch_size, num_proposals, K).
@@ -477,24 +483,37 @@ class DiffusionDet(nn.Module):
             for i, (scores_per_image, box_pred_per_image, image_size) in enumerate(zip(
                     scores, box_pred, image_sizes
             )):
+                print('image: ', i)
                 result = Instances(image_size)
+             
                 scores_per_image, topk_indices = scores_per_image.flatten(0, 1).topk(self.num_proposals, sorted=False)
+                # print('scores: ',scores_per_image)
                 labels_per_image = labels[topk_indices]
                 box_pred_per_image = box_pred_per_image.view(-1, 1, 4).repeat(1, self.num_classes, 1).view(-1, 4)
+                print('box prediction: ',box_pred_per_image.size())
                 box_pred_per_image = box_pred_per_image[topk_indices]
+                height_pred_per_image = height_pred.view(-1, 1, 2).repeat(1, self.num_classes, 1).view(-1, 2)
+                print('height logits: ',height_pred_per_image.size())
 
+                height_pred_per_image = height_pred_per_image[topk_indices]
                 if self.use_ensemble and self.sampling_timesteps > 1:
+                    print('use ensemlbe or sampling_timesteps')
                     return box_pred_per_image, scores_per_image, labels_per_image
 
                 if self.use_nms:
+                    print('use nms')
+                    # was at 0.5
                     keep = batched_nms(box_pred_per_image, scores_per_image, labels_per_image, 0.5)
                     box_pred_per_image = box_pred_per_image[keep]
+                    height_pred_per_image = height_pred_per_image[keep]
                     scores_per_image = scores_per_image[keep]
                     labels_per_image = labels_per_image[keep]
 
                 result.pred_boxes = Boxes(box_pred_per_image)
+                result.pred_height = height_pred_per_image
                 result.scores = scores_per_image
                 result.pred_classes = labels_per_image
+                # print('result',result)
                 results.append(result)
 
         else:

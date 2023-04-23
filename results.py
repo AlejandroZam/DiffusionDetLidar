@@ -117,15 +117,16 @@ def prepareAnn(lbl, alpha, box, h=-1, w=-1, l=-1, x=-1000, y=-1000, z=-1000, ry=
 
 def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, kitti_calib_path, nclass, vp, bins, vp_res, hwrot, height_training):
     # Extract important information from instance class
+    # print('instance',instance)
     boxes  = np.array(instance.get('pred_boxes').tensor)
     scores = np.array(instance.get('scores'))
     labels = np.array(instance.get('pred_classes'))
-    if vp_res:
-        alpha = np.array([rad for rad in instance.get('viewpoint_residual')]) if vp else np.ones((labels.shape))*(-10.00)
-    else:
-        alpha = np.array([getfrombins(cl,bins) for cl in instance.get('viewpoint')]) if vp else np.ones((labels.shape))*(-10.00)
-    
-    h = np.array([[h,g] for h,g in instance.get('height')]) if height_training else np.array([-1,-1000]*labels.shape)
+    # if 0:
+    #     alpha = np.array([rad for rad in instance.get('viewpoint_residual')]) if vp else np.ones((labels.shape))*(-10.00)
+    # else:
+    #     alpha = np.array([getfrombins(cl,bins) for cl in instance.get('viewpoint')]) if vp else np.ones((labels.shape))*(-10.00)
+    alpha = np.ones((labels.shape))*(-10.00)
+    h = np.array([[h,g] for h,g in instance.get('pred_height')]) if height_training else np.array([-1,-1000]*labels.shape)
 
     # Image BV
     bv_image = cv2.imread(filename).astype(np.uint8)
@@ -197,6 +198,7 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
             file_ann.write(strAnn+'\n')
     if write:
         file_ann.close()
+    # print(instance)
     return  im_ann, im_ann_obj, instance
 
 def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test, score_thresh , nms_thresh, kitti_root ):
@@ -279,6 +281,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 is_kitti_ann=False
                 # Inference
                 outputs = predictor(im)
+                # print('outputs:',outputs)
                 list_anns, obj_anns, instances = prepare_for_coco_detection_KITTI(outputs["instances"].to("cpu"), ann_outdir, d["file_name"], write, kitti_calib_path, nclasses, cfg.VIEWPOINT, cfg.VP_BINS, cfg.VIEWPOINT_RESIDUAL, cfg.ROTATED_BOX_TRAINING, cfg.HEIGHT_TRAINING)
                 kitti_results.append(list_anns)
             else:
