@@ -1,0 +1,27 @@
+_BASE_: "Base-DiffusionDetswinbase.yaml"
+MODEL:
+  WEIGHTS: "/content/DiffusionDetLidar/diffdet_coco_swinbase.pth"
+  BACKBONE:
+    NAME: build_swintransformer_fpn_backbone
+  SWIN:
+    SIZE: B-22k
+  FPN:
+    IN_FEATURES: ["swin0", "swin1", "swin2", "swin3" ]
+  DiffusionDet:
+    NUM_PROPOSALS: 300
+    NUM_CLASSES: 3
+DATASETS:
+  TRAIN: ("kitti_train",)
+
+SOLVER:
+  STEPS: (350000, 420000)
+  MAX_ITER: 450000
+INPUT:
+  CROP:
+    ENABLED: True
+  FORMAT: "BGR"
+VIEWPOINT: True
+ROTATED_BOX_TRAINING: True
+HEIGHT_TRAINING: True
+VIEWPOINT_RESIDUAL: True
+VP_BINS: 12
