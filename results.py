@@ -125,7 +125,7 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     #     alpha = np.array([rad for rad in instance.get('viewpoint_residual')]) if vp else np.ones((labels.shape))*(-10.00)
     # else:
     #     alpha = np.array([getfrombins(cl,bins) for cl in instance.get('viewpoint')]) if vp else np.ones((labels.shape))*(-10.00)
-    alpha = np.ones((labels.shape))*(-10.00)
+    alpha = np.ones((labels.shape))*(-12.00)
     h = np.array([[h,g] for h,g in instance.get('pred_height')]) if height_training else np.array([-1,-1000]*labels.shape)
 
     # Image BV
@@ -318,6 +318,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 kitti_results.append([anns.split(' ') for anns in list_anns] if list_anns else [])
                 for ann in list_anns:
                     obj_anns.append(Object3d(ann))
+
             print('c value: ', c)
             if c in sample_idx:
                 print('c in smaple idx')
@@ -329,9 +330,11 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 kitti_im = cv2.imread(os.path.join(kitti_im_path,d["file_name"][-10:]))
                 calib_file = os.path.join(kitti_calib_path.replace('/training',''),d["file_name"][-10:].split('.png')[0]+'.txt')
                 # Show obstacles
-                print('is kitti ann: ',is_kitti_ann)
+
+
+
                 for i, obj in enumerate(obj_anns):
-                    if i == 10:
+                    if i == 5:
                       break
                     kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)
                 # cv2.imshow('image',kitti_im)
