@@ -288,16 +288,15 @@ class SetCriterionDynamicK(nn.Module):
             # print('target classes: ', target_classes_o)
             height_cls_ = target_classes_o[gt_multi_idx]
 
-            # print('class labels: ',height_cls_ )
-
+          
             height_cls_tensor = torch.ones_like(height_cls_, dtype=torch.float32)
 
             # print('boolean tensor of cls: ', height_cls_tensor)
-
+         
 
             height_cls_tensor[height_cls_==0] = 130.05
-            height_cls_tensor[height_cls_==3] = 149.6            
-            height_cls_tensor[height_cls_==5] = 147.9
+            height_cls_tensor[height_cls_==1] = 149.6            
+            height_cls_tensor[height_cls_==2] = 147.9
           
 
   
