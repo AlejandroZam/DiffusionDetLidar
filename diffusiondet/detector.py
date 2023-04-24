@@ -146,7 +146,7 @@ class DiffusionDet(nn.Module):
         matcher = HungarianMatcherDynamicK(
             cfg=cfg, cost_class=class_weight, cost_bbox=l1_weight, cost_giou=giou_weight, use_focal=self.use_focal,cost_height = l1_height_weight )
         weight_dict = {"loss_ce": class_weight, "loss_bbox": l1_weight, "loss_giou": giou_weight,'height_loss':l1_height_weight}
-        print('match works')
+        # print('match works')
         if self.deep_supervision:
             aux_weight_dict = {}
             for i in range(self.num_heads - 1):
@@ -154,12 +154,12 @@ class DiffusionDet(nn.Module):
             weight_dict.update(aux_weight_dict)
 
         losses = ["labels", "boxes","height"]
-        print('right before criterion')
+        # print('right before criterion')
 
         self.criterion = SetCriterionDynamicK(
             cfg=cfg, num_classes=self.num_classes, matcher=matcher, weight_dict=weight_dict, eos_coef=no_object_weight,
             losses=losses, use_focal=self.use_focal,)
-        print('instanctiate main head')
+        # print('instanctiate main head')
         pixel_mean = torch.Tensor(cfg.MODEL.PIXEL_MEAN).to(self.device).view(3, 1, 1)
         pixel_std = torch.Tensor(cfg.MODEL.PIXEL_STD).to(self.device).view(3, 1, 1)
         self.normalizer = lambda x: (x - pixel_mean) / pixel_std
@@ -483,25 +483,25 @@ class DiffusionDet(nn.Module):
             for i, (scores_per_image, box_pred_per_image, image_size) in enumerate(zip(
                     scores, box_pred, image_sizes
             )):
-                print('image: ', i)
+                # print('image: ', i)
                 result = Instances(image_size)
              
                 scores_per_image, topk_indices = scores_per_image.flatten(0, 1).topk(self.num_proposals, sorted=False)
                 # print('scores: ',scores_per_image)
                 labels_per_image = labels[topk_indices]
                 box_pred_per_image = box_pred_per_image.view(-1, 1, 4).repeat(1, self.num_classes, 1).view(-1, 4)
-                print('box prediction: ',box_pred_per_image.size())
+                # print('box prediction: ',box_pred_per_image.size())
                 box_pred_per_image = box_pred_per_image[topk_indices]
                 height_pred_per_image = height_pred.view(-1, 1, 2).repeat(1, self.num_classes, 1).view(-1, 2)
-                print('height logits: ',height_pred_per_image.size())
+                # print('height logits: ',height_pred_per_image.size())
 
                 height_pred_per_image = height_pred_per_image[topk_indices]
                 if self.use_ensemble and self.sampling_timesteps > 1:
-                    print('use ensemlbe or sampling_timesteps')
+                    # print('use ensemlbe or sampling_timesteps')
                     return box_pred_per_image, scores_per_image, labels_per_image
 
                 if self.use_nms:
-                    print('use nms')
+                    # print('use nms')
                     # was at 0.5
                     keep = batched_nms(box_pred_per_image, scores_per_image, labels_per_image, 0.5)
                     box_pred_per_image = box_pred_per_image[keep]

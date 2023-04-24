@@ -355,9 +355,9 @@ class SetCriterionDynamicK(nn.Module):
             # print('***************************************')
 
             pred_height_list.append(src_heights[batch_idx][valid_query])
-            #normalize here if needed, normalize by average class height
+            print('src pred: ',src_heights[batch_idx][valid_query])
             tgt_height_list.append(delta)
-            #normalize here if needed, normalize by average class height
+            print('src ground truth: ',delta)
 
 
 
@@ -377,7 +377,7 @@ class SetCriterionDynamicK(nn.Module):
 
             losses['loss_height'] = loss_height / num_boxes
 
-            # print('loss for height: ',losses['loss_height'])
+            print('loss for height: ',losses['loss_height'])
 
 
         else:
