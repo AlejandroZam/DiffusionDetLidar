@@ -183,7 +183,7 @@ class SetCriterionDynamicK(nn.Module):
         assert 'pred_boxes' in outputs
         # idx = self._get_src_permutation_idx(indices)
         src_boxes = outputs['pred_boxes']
-        #print('boxes loss')
+        # print('boxes loss')
 
    
 
@@ -210,6 +210,13 @@ class SetCriterionDynamicK(nn.Module):
 
             pred_box_list.append(bz_src_boxes[valid_query])
             pred_norm_box_list.append(bz_src_boxes[valid_query] / bz_image_whwh)  # normalize (x1, y1, x2, y2)
+
+            # print('pred nor bbox: ',bz_src_boxes[valid_query])
+            # print('pred bbox: ',bz_src_boxes[valid_query] / bz_image_whwh)
+
+            # print('ground truth nor bbox: ',bz_target_boxes_xyxy[gt_multi_idx])
+            # print('ground truth bbox: ',bz_target_boxes[gt_multi_idx])
+            # print()
             
             tgt_box_list.append(bz_target_boxes[gt_multi_idx])
             tgt_box_xyxy_list.append(bz_target_boxes_xyxy[gt_multi_idx])
@@ -247,7 +254,7 @@ class SetCriterionDynamicK(nn.Module):
 
         return losses
 
-    def loss_height(self, outputs, targets, indices, num_boxes):
+    def loss_height(self, outputs, targets, indices, num_boxes,height_wt = None ):
         """Compute the losses related to the bounding boxes, the L1 regression loss and the GIoU loss
            targets dicts must contain the key "boxes" containing a tensor of dim [nb_target_boxes, 4]
            The target boxes are expected in format (center_x, center_y, w, h), normalized by the image size.
@@ -257,7 +264,11 @@ class SetCriterionDynamicK(nn.Module):
         assert 'pred_height' in outputs
         src_heights= outputs['pred_height']
         batch_size = len(targets)
-
+        wh,wg,wz = 1.0,1.0,1.0
+        if height_wt:
+          # print(height_wt)
+          wh,wg,wz = height_wt
+        
         # print('outputs from model: ',src_heights)
         # print('ground truth: ',targets)
         tgt_height_avg = {'0': 130.05,
@@ -305,23 +316,23 @@ class SetCriterionDynamicK(nn.Module):
 
             #predictions    
             # print('src heights: ', src_heights[batch_idx].size())
-            # bz_src_heights = src_heights[batch_idx]   
+            bz_src_heights = src_heights[batch_idx]   
             # print('length of predictions: ', bz_src_heights.size())
             # print('type ',bz_src_heights[valid_query])
 
             # print('h:', bz_src_heights[valid_query][:,0])
 
-            # bz_src_heights_h = torch.exp(bz_src_heights[valid_query][:,0]) * height_cls_tensor
+            bz_src_heights_h = torch.exp(bz_src_heights[valid_query][:,0]) * height_cls_tensor
       
-            # bz_src_heights_z = bz_src_heights[valid_query][:,1] * height_cls_tensor + height_cls_tensor/2
+            bz_src_heights_z = bz_src_heights[valid_query][:,1] * height_cls_tensor + height_cls_tensor/2
 
             # print('height norm',bz_src_heights_h)
             # print('z norm',bz_src_heights_z)
-            # deltas = torch.stack((bz_src_heights_h, bz_src_heights_z), dim=1)
-            # print('deltas',deltas)
+            non_normal_deltas = torch.stack((bz_src_heights_h, bz_src_heights_z), dim=1)
+            # print('non_normal_deltas: ',non_normal_deltas)
             #anno
             bz_target_heights = targets[batch_idx]['height'][gt_multi_idx]
-
+            # print('non_normal_true_heights', bz_target_heights)
             # print('gt height: ',targets[batch_idx]['height'][gt_multi_idx])
             # print('gt height size: ',targets[batch_idx]['height'][gt_multi_idx].size())
 
@@ -354,12 +365,20 @@ class SetCriterionDynamicK(nn.Module):
  
             # print('***************************************')
 
-            pred_height_list.append(src_heights[batch_idx][valid_query])
-            print('src pred: ',src_heights[batch_idx][valid_query])
+            dh = src_heights[batch_idx][valid_query][:,0] * wh
+
+            dz = src_heights[batch_idx][valid_query][:,1] * wz
+
+
+            pred_delta = torch.stack((dh, dz), dim=1)
+
+
+            pred_height_list.append(pred_delta)
+            # print('src pred: ',src_heights[batch_idx][valid_query])
             tgt_height_list.append(delta)
-            print('src ground truth: ',delta)
+            # print('src ground truth: ',delta)
 
-
+            # print()
 
         if len(pred_height_list) != 0:
             
@@ -371,13 +390,13 @@ class SetCriterionDynamicK(nn.Module):
             #print('num_h: ', num_h)
             losses = {}
             # require normalized (x1, y1, x2, y2)
-            loss_height = F.smooth_l1_loss(src_h, target_h, reduction='sum')
+            loss_height = F.smooth_l1_loss(src_h, target_h, reduction='none')
 
 
 
-            losses['loss_height'] = loss_height / num_boxes
+            losses['loss_height'] = loss_height.sum() / num_boxes
 
-            print('loss for height: ',losses['loss_height'])
+            # print('loss for height: ',losses['loss_height'])
 
 
         else:
@@ -440,10 +459,12 @@ class SetCriterionDynamicK(nn.Module):
         
 
 
-
+        kwargs = {}
         for loss in self.losses:
             # print('loss:', loss)
-            losses.update(self.get_loss(loss, outputs, targets, indices, num_boxes))
+            if 'height' == loss:
+              kwargs = {'height_wt': self.weight_dict['height_loss']}
+            losses.update(self.get_loss(loss, outputs, targets, indices, num_boxes,**kwargs))
 
         # In case of auxiliary losses, we repeat this process with the output of each intermediate layer.
         if 'aux_outputs' in outputs:
@@ -454,11 +475,17 @@ class SetCriterionDynamicK(nn.Module):
                         # Intermediate masks losses are too costly to compute, we ignore them.
                         continue
                     kwargs = {}
+   
                     if loss == 'labels':
                         # Logging is enabled only for the last layer
                         kwargs = {'log': False}
+                    # print(loss)
+                    # print('height_loss_'+str(i))
+                    if 'height' == loss:
+                      kwargs = {'height_wt': self.weight_dict['height_loss_'+str(i)]}
                     l_dict = self.get_loss(loss, aux_outputs, targets, indices, num_boxes, **kwargs)
                     l_dict = {k + f'_{i}': v for k, v in l_dict.items()}
+ 
                     losses.update(l_dict)
         # print('return loss _6')
         return losses

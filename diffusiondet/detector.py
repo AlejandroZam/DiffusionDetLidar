@@ -356,8 +356,13 @@ class DiffusionDet(nn.Module):
             # print('obtain weights from criterion dict_7')
             weight_dict = self.criterion.weight_dict
             for k in loss_dict.keys():
+                # print('key: ',k)
                 if k in weight_dict:
+                    # print('times wt')
+                    # print(loss_dict[k])
+                    # print(weight_dict[k])
                     loss_dict[k] *= weight_dict[k]
+                    # print('equal: ',loss_dict[k] )
             return loss_dict
 
     def prepare_diffusion_repeat(self, gt_boxes):
