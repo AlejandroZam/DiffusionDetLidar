@@ -14,7 +14,7 @@ from diffusiondet.catalog import MetadataCatalog, DatasetCatalog
 from detectron2.config import get_cfg
 from detectron2.engine import default_setup
 from detectron2.data.detection_utils import read_image
-
+import heapq
 from detectron2.engine import DefaultPredictor
 import math
 from diffusiondet.util.birdview_detection_refiner import BirdviewDetectionRefiner
@@ -27,7 +27,7 @@ from diffusiondet.predictor import VisualizationDemo
 from diffusiondet import add_diffusiondet_config, DiffusionDetWithTTA
 from diffusiondet.util.model_ema import add_model_ema_configs, may_build_model_ema, may_get_ema_checkpointer, EMAHook, \
     apply_model_ema_and_restore, EMADetectionCheckpointer
-
+from bisect import bisect, insort
 '''
 This script allows the user to:
 1. Obtain the annotations in KITTI format of one or multiple checkpoints, to be evaluated with an external evaluator like https://github.com/cguindel/eval_kitti
@@ -115,12 +115,91 @@ def prepareAnn(lbl, alpha, box, h=-1, w=-1, l=-1, x=-1000, y=-1000, z=-1000, ry=
      
     return ann, obj3d, strAnn
 
-def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, kitti_calib_path, nclass, vp, bins, vp_res, hwrot, height_training,gt_obj):
+def box_iou(pred_box, gt_box):
+    '''
+    Calculate iou for predict box and ground truth box
+    Param
+         pred_box: predict box coordinate
+                   (xmin,ymin,xmax,ymax) format
+         gt_box: ground truth box coordinate
+                 (xmin,ymin,xmax,ymax) format
+    Return
+         iou value
+    '''
+    # get intersection box
+    inter_box = [max(pred_box[0], gt_box[0]), max(pred_box[1], gt_box[1]), min(pred_box[2], gt_box[2]), min(pred_box[3], gt_box[3])]
+    inter_w = max(0.0, inter_box[2] - inter_box[0] + 1)
+    inter_h = max(0.0, inter_box[3] - inter_box[1] + 1)
+
+    # compute overlap (IoU) = area of intersection / area of union
+    pred_area = (pred_box[2] - pred_box[0] + 1) * (pred_box[3] - pred_box[1] + 1)
+    gt_area = (gt_box[2] - gt_box[0] + 1) * (gt_box[3] - gt_box[1] + 1)
+    inter_area = inter_w * inter_h
+    union_area = pred_area + gt_area - inter_area
+    return 0 if union_area == 0 else float(inter_area) / float(union_area) 
+class Closest:
+    """Assumes *no* redundant entries - all inputs must be unique"""
+    def __init__(self, numlist=None, firstdistance=0):
+        if numlist == None:
+            numlist=[]
+        self.numindexes = dict((val, n) for n, val in enumerate(numlist))
+        self.nums = sorted(self.numindexes)
+        self.firstdistance = firstdistance
+
+    def append(self, num):
+        if num in self.numindexes:
+            raise ValueError("Cannot append '%s' it is already used" % str(num))
+        self.numindexes[num] = len(self.nums)
+        bisect.insort(self.nums, num)
+
+    def rank(self, target):
+        rank = bisect.bisect(self.nums, target)
+        if rank == 0:
+            pass
+        elif len(self.nums) == rank:
+            rank -= 1
+        else:
+            dist1 = target - self.nums[rank - 1]
+            dist2 = self.nums[rank] - target
+            if dist1 < dist2:
+                rank -= 1
+        return rank
+
+    def closest(self, target):
+        try:
+            return self.numindexes[self.nums[self.rank(target)]]
+        except IndexError:
+            return 0
+
+    def distance(self, target):
+        rank = self.rank(target)
+        try:
+            dist = abs(self.nums[rank] - target)
+        except IndexError:
+            dist = self.firstdistance
+        return dist
+
+
+def get_min(a,b):
+  
+  np.abs(a-b)
+
+  return np.abs(a - b)
+
+
+
+  
+def k_nearest(k, center, sorted_data):
+    'Return *k* members of *sorted_data* nearest to *center*'
+    i = bisect(sorted_data, center)
+    segment = sorted_data[max(i-k, 0) : i+k]
+    return heapq.nsmallest(k, segment, key=lambda x: abs(x - center))
+
+def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, kitti_calib_path, nclass, vp, bins, vp_res, hwrot, height_training,gt_objs):
     # Extract important information from instance class
     # print('instance',instance)
 
-    
-    
+
 
 
     boxes  = np.array(instance.get('pred_boxes').tensor)
@@ -130,18 +209,20 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     # boxes[:,3] = 82- boxes[:,3]
     # print('boexs: ',boxes[:,1])
 
+    # for 
     scores = np.array(instance.get('scores'))
-    gt_bbx = []
-    gt_bbx[0,1,2,3] =  gt_obj.xmin, gt_obj.ymin, gt_obj.xmax, gt_obj.ymax
-    gt_lhw = []
-    gt_lhw[0,1,2] =  gt_obj.length, gt_obj.width, gt_obj.height
+    # gt_bbx = []
+    # gt_bbx[0,1,2,3] =  gt_obj.xmin, gt_obj.ymin, gt_obj.xmax, gt_obj.ymax
+    # gt_lhw = []
+    # gt_lhw[0,1,2] =  gt_obj.length, gt_obj.width, gt_obj.height
 
-    gt_a = gt_obj.alpha
+    # gt_a = gt_obj.alpha
 
+    # diff_0 = boxes[:,0] - gt_bbx
 
-    qualified_objs = sum(scores>0.02)
+    # qualified_objs = sum(scores>0.02)
 
-    print('scores: ',sum(scores>0.02))
+    # print('scores: ',sum(scores>0.02))
 
 
 
@@ -150,8 +231,40 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     #     alpha = np.array([rad for rad in instance.get('viewpoint_residual')]) if vp else np.ones((labels.shape))*(-10.00)
     # else:
     #     alpha = np.array([getfrombins(cl,bins) for cl in instance.get('viewpoint')]) if vp else np.ones((labels.shape))*(-10.00)
-    alpha = np.ones((labels.shape))*(-12.00)
+    alpha = np.ones((labels.shape))*(-10.00)
     h = np.array([[h,g] for h,g in instance.get('pred_height')]) if height_training else np.array([-1,-1000]*labels.shape)
+
+    for gt in gt_objs:
+      gt_name = gt.kind_name
+      gt_bbox = gt.xmin, gt.ymin, gt.xmax, gt.ymax
+      gt_alpha = gt.alpha
+      gt_lhw =  gt.length, gt.width, gt.height
+
+
+
+      # bb0 = get_min(np.sort(gt.xmin),boxes[:,0])
+      # bb1 = get_min(gt.xmin,boxes[:,1])
+      # bb2 = get_min(gt.xmin,boxes[:,2])
+      # bb3 = get_min(gt.xmin,boxes[:,3])
+    
+      bb0 = k_nearest(5, gt.xmin,boxes[:,0] )
+      bb1 = k_nearest(5, gt.ymin,boxes[:,1] )
+      bb2 = k_nearest(5, gt.xmax,boxes[:,2] )
+      bb3 = k_nearest(5, gt.ymax,boxes[:,3] )
+
+        
+
+
+
+      # for i, b in enumerate(boxes):
+      #   tempb = b[0],b[1],b[2],b[3]
+      #   temp_name = labels[i]
+      #   temp_h = h[i]
+
+      #   print(get_min(gt.xmin,b[0]))
+   
+        #iou_score = box_iou(tempb, tempbbox)
+   
 
 
 
@@ -334,6 +447,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 gt_objs.append(temp)
             print('ground truth: ')
             for gt in gt_objs:
+              gt.yaw = -10
               print('name: ',gt.kind_name,' trunc: ',gt.truncated,' occ: ',gt.occluded,' alpha: ',gt.alpha,' xmin: ',gt.xmin,' ymin: ',gt.ymin,' xmax: ',gt.xmax,' ymax: ',gt.ymax,' height: ',gt.height,' width: ',gt.width,' length: ',gt.length,' yaw: ',gt.yaw)
 
 
@@ -442,9 +556,10 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 
                 for i, obj in enumerate(obj_anns):
                   
-
-                  # print('pred: ')
-                  # print('name: ',obj.kind_name,' trunc: ',obj.truncated,' occ: ',obj.occluded,' alpha: ',obj.alpha,' xmin: ',obj.xmin,' ymin: ',obj.ymin,' xmax: ',obj.xmax,' ymax: ',obj.ymax,' height: ',obj.height,' width: ',obj.width,' length: ',obj.length,' yaw: ',obj.yaw)
+                  if i == 10:
+                    break
+                  print('pred: ')
+                  print('name: ',obj.kind_name,' trunc: ',obj.truncated,' occ: ',obj.occluded,' alpha: ',obj.alpha,' xmin: ',obj.xmin,' ymin: ',obj.ymin,' xmax: ',obj.xmax,' ymax: ',obj.ymax,' height: ',obj.height,' width: ',obj.width,' length: ',obj.length,' yaw: ',obj.yaw)
 
                 
                   kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)
