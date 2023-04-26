@@ -186,7 +186,9 @@ def get_min(a,b):
 
   return np.abs(a - b)
 
+def get_best(myList,myNumber,k):
 
+  return [n for d, n in sorted((abs(x-myNumber), x) for x in myList)[:k]]
 
   
 def k_nearest(k, center, sorted_data):
@@ -234,28 +236,89 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     alpha = np.ones((labels.shape))*(-10.00)
     h = np.array([[h,g] for h,g in instance.get('pred_height')]) if height_training else np.array([-1,-1000]*labels.shape)
 
+
+    final_labels = []
+    final_boxes = []
+    final_h = []
+    new_labels = []
+    new_boxes = []
+    new_h = []
+
     for gt in gt_objs:
+      print(gt.kind_name)
       gt_name = gt.kind_name
       gt_bbox = gt.xmin, gt.ymin, gt.xmax, gt.ymax
       gt_alpha = gt.alpha
       gt_lhw =  gt.length, gt.width, gt.height
 
+      name_map = {'Car':0,'Pedestrian':1,'Cyclist':2}
 
 
-      # bb0 = get_min(np.sort(gt.xmin),boxes[:,0])
-      # bb1 = get_min(gt.xmin,boxes[:,1])
-      # bb2 = get_min(gt.xmin,boxes[:,2])
-      # bb3 = get_min(gt.xmin,boxes[:,3])
+
+      class_index = np.where(labels==name_map[gt.kind_name])[0]     
+
+      bb0 = get_best(boxes[:,0],gt.xmin,5)
+      bb1 = get_best(boxes[:,1],gt.ymin,5)
+      bb2 = get_best(boxes[:,2],gt.xmax,5)
+      bb3 = get_best(boxes[:,3],gt.ymax,5)
     
-      bb0 = k_nearest(5, gt.xmin,boxes[:,0] )
-      bb1 = k_nearest(5, gt.ymin,boxes[:,1] )
-      bb2 = k_nearest(5, gt.xmax,boxes[:,2] )
-      bb3 = k_nearest(5, gt.ymax,boxes[:,3] )
+      # print(class_index)
+      # print(bb0)
+      # print(bb1)
+      # print(bb2)
+      # print(bb3)
 
+
+      # new_labels = []
+      # new_boxes = []
+      # new_h = []
+      j = 0
+      for i in range(5):
+
+        new_labels.append(labels[class_index[i]])
+    
+        new_h.append(h[class_index[i]])
+        new_boxes.append( [bb0[i],bb1[i],bb2[i],bb3[i]])
+
+
+
+        j = j+1
+        if j == 5:
+          break
+      # final_labels.append((np.array(new_labels)))
+      # final_h.append((np.array(new_h)))
+      # final_boxes.append((np.array(new_boxes)))
+
+
+    # labels_mat = np.array(final_labels)
+    # boxes_mat = np.array(final_h)
+    # h_mat = np.array(final_boxes)
         
 
+    # print(new_labels)
+    # print(new_h)
+    # print(new_boxes)
 
 
+    labels_mat = np.array(new_labels)
+    boxes_mat = np.array(new_boxes)
+    h_mat = np.array(new_h)
+    print(labels_mat.shape)
+    print(boxes_mat.shape)
+    print(h_mat.shape)
+    print(labels_mat)
+    print(boxes_mat)
+    print(h_mat)
+      # bb0 = k_nearest(5, gt.xmin,boxes[:,0] )
+      # bb1 = k_nearest(5, gt.ymin,boxes[:,1] )
+      # bb2 = k_nearest(5, gt.xmax,boxes[:,2] )
+      # bb3 = k_nearest(5, gt.ymax,boxes[:,3] )
+
+      # temph = k_nearest(5, gt.ymax,h[:,0] )
+      # print(bb0)
+      # print(bb1)
+      # print(bb2)
+      # print(bb3)
       # for i, b in enumerate(boxes):
       #   tempb = b[0],b[1],b[2],b[3]
       #   temp_name = labels[i]
@@ -293,9 +356,9 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     im_ann_obj = []
     if write:
         file_ann  = open(os.path.join(output_folder,filename[-10:].split('.png')[0]+'.txt'), 'w+')
-    for k, box in enumerate(boxes):
-        lbl = catName(labels[k],nclass)
-        ann,obj3d,strAnn = prepareAnn(lbl,alpha[k],box,score=scores[k],h=h[k,0],z=h[k,1])
+    for k, box in enumerate(boxes_mat):
+        lbl = catName(labels_mat[k],nclass)
+        ann,obj3d,strAnn = prepareAnn(lbl,alpha[k],boxes_mat,score=scores[k],h=h_mat[k,0],z=h_mat[k,1])
 
         if hwrot and height_training:
             refiner.refine_detection_rotated_wheight(obj3d)
