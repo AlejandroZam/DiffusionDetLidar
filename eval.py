@@ -115,9 +115,14 @@ def prepareAnn(lbl, alpha, box, h=-1, w=-1, l=-1, x=-1000, y=-1000, z=-1000, ry=
      
     return ann, obj3d, strAnn
 
-def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, kitti_calib_path, nclass, vp, bins, vp_res, hwrot, height_training):
+def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, kitti_calib_path, nclass, vp, bins, vp_res, hwrot, height_training,gt_obj):
     # Extract important information from instance class
     # print('instance',instance)
+
+    
+    
+
+
     boxes  = np.array(instance.get('pred_boxes').tensor)
     # boxes[:,0] = 49+ boxes[:,1]
     # boxes[:,1] = 82 + boxes[:,1]
@@ -126,6 +131,20 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     # print('boexs: ',boxes[:,1])
 
     scores = np.array(instance.get('scores'))
+    gt_bbx = []
+    gt_bbx[0,1,2,3] =  gt_obj.xmin, gt_obj.ymin, gt_obj.xmax, gt_obj.ymax
+    gt_lhw = []
+    gt_lhw[0,1,2] =  gt_obj.length, gt_obj.width, gt_obj.height
+
+    gt_a = gt_obj.alpha
+
+
+    qualified_objs = sum(scores>0.02)
+
+    print('scores: ',sum(scores>0.02))
+
+
+
     labels = np.array(instance.get('pred_classes'))
     # if 0:
     #     alpha = np.array([rad for rad in instance.get('viewpoint_residual')]) if vp else np.ones((labels.shape))*(-10.00)
@@ -133,6 +152,12 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     #     alpha = np.array([getfrombins(cl,bins) for cl in instance.get('viewpoint')]) if vp else np.ones((labels.shape))*(-10.00)
     alpha = np.ones((labels.shape))*(-12.00)
     h = np.array([[h,g] for h,g in instance.get('pred_height')]) if height_training else np.array([-1,-1000]*labels.shape)
+
+
+
+
+
+
 
     # Image BV
     bv_image = cv2.imread(filename).astype(np.uint8)
@@ -328,7 +353,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
      
                 # print('outputs:',outputs["instances"][:5])
 
-                list_anns, obj_anns, instances = prepare_for_coco_detection_KITTI(outputs["instances"].to("cpu"), ann_outdir, d["file_name"], write, kitti_calib_path, nclasses, cfg.VIEWPOINT, cfg.VP_BINS, cfg.VIEWPOINT_RESIDUAL, cfg.ROTATED_BOX_TRAINING, cfg.HEIGHT_TRAINING)
+                list_anns, obj_anns, instances = prepare_for_coco_detection_KITTI(outputs["instances"].to("cpu"), ann_outdir, d["file_name"], write, kitti_calib_path, nclasses, cfg.VIEWPOINT, cfg.VP_BINS, cfg.VIEWPOINT_RESIDUAL, cfg.ROTATED_BOX_TRAINING, cfg.HEIGHT_TRAINING,gt_objs)
 
 
 
@@ -364,37 +389,41 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 kitti_results.append([anns.split(' ') for anns in list_anns] if list_anns else [])
                 for ann in list_anns:
                     obj_anns.append(Object3d(ann))
-            res_list = []
-            obj_anns_final = []
+            # res_list = []
+            # obj_anns_final = []
 
 
 
 
 
-            for gt_ in gt_objs:
-              res_list = []
-              for obj in obj_anns:
-                if obj.kind_name == 'DontCare' :
+            # for gt_ in gt_objs:
+            #   res_list = []
+            #   for obj in obj_anns:
 
-                  pass
-                else:
 
-                  res = obj.get_diff(gt_)
-                  res_list.append(res)
+            #     res = obj.get_diff(gt_)
+            #     print(res)
+            #     res_list.append(res)
               
-              res_mat = np.array(res_list)
-              res_mat[res_mat<=0] = 'inf'
-              print('result_mat: ',res_mat.shape)
+            #   res_mat = np.array(res_list)
+            #   res_mat[res_mat<=0] = 'inf'
+            #   print('result_mat: ',res_mat.shape)
 
-              best = np.argmin(res_mat,axis=0)
-              print('best index:',best)
+            #   best = np.argmin(res_mat[1:11],axis=0)
+            #   print('best index:',best)
 
 
-              temp = (str(obj_anns[0].data[0])+' ' + str(obj_anns[1].data[1]) +' '+str(obj_anns[2].data[2]) +' '+str(obj_anns[best[3]].data[3])+' ' +str(obj_anns[best[4]].data[4])+' ' +str(obj_anns[best[5]].data[5])+' ' +
-              str(obj_anns[best[6]].data[6])+' '+str(obj_anns[best[7]].data[7]) +' '+str(obj_anns[best[8]].data[8]) +' '+str(obj_anns[best[9]].data[9]) +' '+str(obj_anns[best[10]].data[10])+' ' +str(obj_anns[best[11]].data[11]))
-              print(temp)
-              obj_anns_final.append(res_mat[best])
-              print('best index:',res_mat[best,np.array([0])])
+
+
+
+
+
+
+            #   temp = (str(obj_anns[0].kind_name)+' ' + str(obj_anns[0].truncated) +' '+str(obj_anns[0].occluded) +' '+str(obj_anns[0].alpha)+' ' +str(obj_anns[best[4]].data[4])+' ' +str(obj_anns[best[5]].data[5])+' ' +
+            #   str(obj_anns[best[6]].data[6])+' '+str(obj_anns[best[7]].data[7]) +' '+str(obj_anns[best[8]].data[8]) +' '+str(obj_anns[best[9]].data[9]) +' '+str(obj_anns[best[10]].data[10])+' ' +str(obj_anns[best[11]].data[11])+' ' +str(obj_anns[best[11]].data[12]))
+            #   print(temp)
+            #   obj_anns_final.append(res_mat[best])
+            #   print('best index:',res_mat[best,np.array([0])])
    
 
             # print('c value: ', c)
