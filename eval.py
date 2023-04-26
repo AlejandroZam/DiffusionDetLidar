@@ -364,9 +364,38 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 kitti_results.append([anns.split(' ') for anns in list_anns] if list_anns else [])
                 for ann in list_anns:
                     obj_anns.append(Object3d(ann))
+            res_list = []
+            obj_anns_final = []
 
-            for obj in obj_anns:
-              if 
+
+
+
+
+            for gt_ in gt_objs:
+              res_list = []
+              for obj in obj_anns:
+                if obj.kind_name == 'DontCare' :
+
+                  pass
+                else:
+
+                  res = obj.get_diff(gt_)
+                  res_list.append(res)
+              
+              res_mat = np.array(res_list)
+              res_mat[res_mat<=0] = 'inf'
+              print('result_mat: ',res_mat.shape)
+
+              best = np.argmin(res_mat,axis=0)
+              print('best index:',best)
+
+
+              temp = (str(obj_anns[0].data[0])+' ' + str(obj_anns[1].data[1]) +' '+str(obj_anns[2].data[2]) +' '+str(obj_anns[best[3]].data[3])+' ' +str(obj_anns[best[4]].data[4])+' ' +str(obj_anns[best[5]].data[5])+' ' +
+              str(obj_anns[best[6]].data[6])+' '+str(obj_anns[best[7]].data[7]) +' '+str(obj_anns[best[8]].data[8]) +' '+str(obj_anns[best[9]].data[9]) +' '+str(obj_anns[best[10]].data[10])+' ' +str(obj_anns[best[11]].data[11]))
+              print(temp)
+              obj_anns_final.append(res_mat[best])
+              print('best index:',res_mat[best,np.array([0])])
+   
 
             # print('c value: ', c)
             if c in sample_idx:
@@ -385,8 +414,8 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 for i, obj in enumerate(obj_anns):
                   
 
-                  print('pred: ')
-                  print('name: ',obj.kind_name,' trunc: ',obj.truncated,' occ: ',obj.occluded,' alpha: ',obj.alpha,' xmin: ',obj.xmin,' ymin: ',obj.ymin,' xmax: ',obj.xmax,' ymax: ',obj.ymax,' height: ',obj.height,' width: ',obj.width,' length: ',obj.length,' yaw: ',obj.yaw)
+                  # print('pred: ')
+                  # print('name: ',obj.kind_name,' trunc: ',obj.truncated,' occ: ',obj.occluded,' alpha: ',obj.alpha,' xmin: ',obj.xmin,' ymin: ',obj.ymin,' xmax: ',obj.xmax,' ymax: ',obj.ymax,' height: ',obj.height,' width: ',obj.width,' length: ',obj.length,' yaw: ',obj.yaw)
 
                 
                   kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)

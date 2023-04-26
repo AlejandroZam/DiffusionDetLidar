@@ -39,6 +39,28 @@ class Object3d(object):
     self.yaw = data[14]  # yaw angle
     if len(data) > 15:
         self.score = data[15]
+    self.data = data
+
+
+  def get_diff(self,obj):
+    res = [1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+    if self.kind_name == obj.kind_name: 
+      res[0] = 0.0
+    res[1] = abs(self.truncated - obj.truncated)
+    res[2] = abs(self.occluded - int(obj.occluded ))
+    res[3] = abs(self.alpha - obj.alpha)
+ 
+    res[4] = abs(self.xmin - obj.xmin  )
+    res[5] = abs(self.ymin - obj.ymin  )
+    res[6] = abs(self.xmax - obj.xmax   )
+    res[7] = abs(self.ymax - obj.ymax )
+    res[8] = abs(self.height - obj.height )
+    res[9] = abs(self.width - obj.width )
+    res[10] = abs(self.length - obj.length) 
+    res[11] = abs(self.yaw - obj.yaw)
+
+    return res
+
 
   def print_object(self):
     print('here')
