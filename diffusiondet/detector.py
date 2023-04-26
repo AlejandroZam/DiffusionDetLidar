@@ -271,14 +271,19 @@ class DiffusionDet(nn.Module):
             output = {'pred_logits': outputs_class[-1], 'pred_boxes': outputs_coord[-1],'pred_height': outputs_height[-1] }
             box_cls = output["pred_logits"]
             box_pred = output["pred_boxes"]
+ 
             height_pred = output["pred_height"]
             results = self.inference(box_cls, box_pred, height_pred,images.image_sizes)
         if do_postprocess:
-            # print('post processing')
+            print('post processing')
             processed_results = []
             for results_per_image, input_per_image, image_size in zip(results, batched_inputs, images.image_sizes):
                 height = input_per_image.get("height", image_size[0])
                 width = input_per_image.get("width", image_size[1])
+                print(height)
+                print(width)
+                print(image_size)
+                print(results_per_image)
                 r = detector_postprocess(results_per_image, height, width)
                 processed_results.append({"instances": r})
             return processed_results
@@ -542,8 +547,9 @@ class DiffusionDet(nn.Module):
                     height_pred_per_image = height_pred_per_image[keep]
                     scores_per_image = scores_per_image[keep]
                     labels_per_image = labels_per_image[keep]
-
+ 
                 result.pred_boxes = Boxes(box_pred_per_image)
+
                 result.pred_height = height_pred_per_image
                 result.scores = scores_per_image
                 result.pred_classes = labels_per_image
@@ -551,6 +557,7 @@ class DiffusionDet(nn.Module):
                 results.append(result)
 
         else:
+            print('not fed or focal')
             # For each box we assign the best class or the second best if the best on is `no_object`.
             scores, labels = F.softmax(box_cls, dim=-1)[:, :, :-1].max(-1)
 
