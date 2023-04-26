@@ -119,6 +119,12 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     # Extract important information from instance class
     # print('instance',instance)
     boxes  = np.array(instance.get('pred_boxes').tensor)
+    # boxes[:,0] = 49+ boxes[:,1]
+    # boxes[:,1] = 82 + boxes[:,1]
+    # boxes[:,2] = 49 - boxes[:,1]
+    # boxes[:,3] = 82- boxes[:,3]
+    # print('boexs: ',boxes[:,1])
+
     scores = np.array(instance.get('scores'))
     labels = np.array(instance.get('pred_classes'))
     # if 0:
@@ -283,6 +289,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
             file = os.path.join(ann_outdir,d["file_name"][-10:].split('.png')[0]+'.txt')
             print('pred path: ',file)
             im = cv2.imread(d["file_name"])
+            print(im.shape)
             print("Preparing prediction {}, from {}, image: {}".format(str(c),str(len(val_bv_dicts)),d["file_name"]))
 
             gt_label_path = os.path.join(calib_root_path,d["file_name"][-10:].split('.png')[0]+'.txt')
@@ -319,7 +326,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 # Inference
                 outputs = predictor(im)
      
-                print('outputs:',outputs["instances"][:5])
+                # print('outputs:',outputs["instances"][:5])
 
                 list_anns, obj_anns, instances = prepare_for_coco_detection_KITTI(outputs["instances"].to("cpu"), ann_outdir, d["file_name"], write, kitti_calib_path, nclasses, cfg.VIEWPOINT, cfg.VP_BINS, cfg.VIEWPOINT_RESIDUAL, cfg.ROTATED_BOX_TRAINING, cfg.HEIGHT_TRAINING)
 
@@ -358,6 +365,9 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 for ann in list_anns:
                     obj_anns.append(Object3d(ann))
 
+            for obj in obj_anns:
+              if 
+
             # print('c value: ', c)
             if c in sample_idx:
                 # print('c in smaple idx')
@@ -374,8 +384,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 
                 for i, obj in enumerate(obj_anns):
                   
-                  if i == 5:
-                    break
+
                   print('pred: ')
                   print('name: ',obj.kind_name,' trunc: ',obj.truncated,' occ: ',obj.occluded,' alpha: ',obj.alpha,' xmin: ',obj.xmin,' ymin: ',obj.ymin,' xmax: ',obj.xmax,' ymax: ',obj.ymax,' height: ',obj.height,' width: ',obj.width,' length: ',obj.length,' yaw: ',obj.yaw)
 

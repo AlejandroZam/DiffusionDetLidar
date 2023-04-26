@@ -275,15 +275,15 @@ class DiffusionDet(nn.Module):
             height_pred = output["pred_height"]
             results = self.inference(box_cls, box_pred, height_pred,images.image_sizes)
         if do_postprocess:
-            print('post processing')
+            # print('post processing')
             processed_results = []
             for results_per_image, input_per_image, image_size in zip(results, batched_inputs, images.image_sizes):
                 height = input_per_image.get("height", image_size[0])
                 width = input_per_image.get("width", image_size[1])
-                print(height)
-                print(width)
-                print(image_size)
-                print(results_per_image)
+                # print(height)
+                # print(width)
+                # print(image_size)
+                # print(results_per_image)
                 r = detector_postprocess(results_per_image, height, width)
                 processed_results.append({"instances": r})
             return processed_results
@@ -313,12 +313,13 @@ class DiffusionDet(nn.Module):
                 * "height", "width" (int): the output resolution of the model, used in inference.
                   See :meth:`postprocess` for details.
         """
-      
+        
         images, images_whwh = self.preprocess_image(batched_inputs)
         if isinstance(images, (list, torch.Tensor)):
             images = nested_tensor_from_tensor_list(images)
 
         # Feature Extraction.
+        print(images.tensor.size())
         src = self.backbone(images.tensor)
         features = list()
         for f in self.in_features:

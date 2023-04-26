@@ -93,7 +93,7 @@ class DatasetMapper:
                 transforms = crop_tfm + transforms
 
         image_shape = image.shape[:2]  # h, w
-
+        print('orig image shape: ', image_shape)
         # Pytorch's dataloader is efficient on torch.Tensor due to shared-memory,
         # but not efficient on large generic data structures due to the use of pickle & mp.Queue.
         # Therefore it's important to use torch.Tensor.
@@ -102,6 +102,7 @@ class DatasetMapper:
 
         # USER: Remove if you don't use pre-computed proposals.
         if self.load_proposals:
+            print('fuck')
             utils.transform_proposals(
                 dataset_dict, image_shape, transforms, self.min_box_side_len, self.proposal_topk
             )
