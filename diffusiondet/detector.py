@@ -208,6 +208,8 @@ class DiffusionDet(nn.Module):
             # print('model predictions')
             preds, outputs_class, outputs_coord, outputs_height = self.model_predictions(backbone_feats, images_whwh, img, time_cond,
                                                                          self_cond, clip_x_start=clip_denoised)
+            # print('really raw: ',outputs_height.size())
+            # print('weights : ',self.criterion.weight_dict)
             pred_noise, x_start = preds.pred_noise, preds.pred_x_start
 
             if self.box_renewal:  # filter
@@ -500,7 +502,34 @@ class DiffusionDet(nn.Module):
                 height_pred_per_image = height_pred.view(-1, 1, 2).repeat(1, self.num_classes, 1).view(-1, 2)
                 # print('height logits: ',height_pred_per_image.size())
 
-                height_pred_per_image = height_pred_per_image[topk_indices]
+                height_cls_tensor = torch.ones_like(labels, dtype=torch.float32)
+
+                # print('boolean tensor of cls: ', height_cls_tensor)
+                # print('labels: ', labels)
+
+                height_cls_tensor[labels==0] = 130.05
+                height_cls_tensor[labels==1] = 149.6            
+                height_cls_tensor[labels==2] = 147.9
+
+
+                h = torch.exp(height_pred_per_image[:,0] ) * height_cls_tensor
+                z = (height_pred_per_image[:,1]) * height_cls_tensor + height_cls_tensor/2.0
+
+
+
+                # h = torch.exp(height_pred_per_image[:,0] / 5.0) * height_cls_tensor
+                # z = (height_pred_per_image[:,1] / 10.0) * height_cls_tensor + height_cls_tensor/2.0
+
+                height_pred_final = torch.stack((h,z),dim=1)
+
+
+
+
+
+
+
+
+                height_pred_per_image = height_pred_final[topk_indices]
                 if self.use_ensemble and self.sampling_timesteps > 1:
                     # print('use ensemlbe or sampling_timesteps')
                     return box_pred_per_image, scores_per_image, labels_per_image

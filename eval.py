@@ -277,15 +277,21 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 
         for image_id, d in enumerate(val_bv_dicts):
             c += 1
-            file = os.path.join(ann_outdir,d["file_name"][-10:].split('.png')[0]+'.txt')
+            file_ = os.path.join(ann_outdir,d["file_name"][-10:].split('.png')[0]+'.txt')
             im = cv2.imread(d["file_name"])
             print("Preparing prediction {}, from {}, image: {}".format(str(c),str(len(val_bv_dicts)),d["file_name"]))
-            if not os.path.exists(file) or write:
+
+            print('ground truth: ',d)
+
+            if not os.path.exists(file_) or write:
                 is_kitti_ann=False
                 # Inference
                 outputs = predictor(im)
+     
                 # print('outputs:',outputs)
                 list_anns, obj_anns, instances = prepare_for_coco_detection_KITTI(outputs["instances"].to("cpu"), ann_outdir, d["file_name"], write, kitti_calib_path, nclasses, cfg.VIEWPOINT, cfg.VP_BINS, cfg.VIEWPOINT_RESIDUAL, cfg.ROTATED_BOX_TRAINING, cfg.HEIGHT_TRAINING)
+
+
 
 
                 fixed_list_anns = []
@@ -306,7 +312,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
            
                   elif obj.kind_name == 'Truck':
                     obj.kind_name = 'Cyclist'
-    
+                print(fixed_list_anns[:3])    
 
 
                 #kitti_results.append(list_anns)
@@ -314,7 +320,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
             else:
                 print('why we here')
                 is_kitti_ann=True
-                with open(file,'r') as f:
+                with open(file_,'r') as f:
                     list_anns = f.read().splitlines()
                 kitti_results.append([anns.split(' ') for anns in list_anns] if list_anns else [])
                 for ann in list_anns:
