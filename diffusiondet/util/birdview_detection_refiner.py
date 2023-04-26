@@ -31,8 +31,15 @@ class BirdviewDetectionRefiner:
         effective_bvheight = self.bvheight / 2 if not self.only_front else self.bvheight
 
         # Compute object centroid
+        
+
         velo_ctr_x = -(bv_ctr_y - effective_bvheight) * self.bvres
         velo_ctr_y = -(bv_ctr_x - self.bvwidth / 2) * self.bvres
+
+        print('velo ctrx : , ',velo_ctr_x)
+        print('velo ctry: , ',velo_ctr_y)
+
+
         #velo_ctr_z = ground_height - self.velodyne_h  
         velo_ctr_z = ((object_z - obj.height/2.) / 255 * 3.0)-self.velodyne_h 
 

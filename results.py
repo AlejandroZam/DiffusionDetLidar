@@ -131,6 +131,8 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     # Image BV
     bv_image = cv2.imread(filename).astype(np.uint8)
 
+    print('image size: ',bv_image.size)
+
     if height_training:
         bv_ground = None
     else:
@@ -214,7 +216,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
     add_diffusiondet_config(cfg)
     add_model_ema_configs(cfg)
     cfg.DATASETS.TEST = ("kitti_train",)
-    cfg.OUTPUT_DIR = '/content/output_final'
+    cfg.OUTPUT_DIR = '/content/output'
     cfg.merge_from_file(os.path.join(detectron2_root,"configs/{}.yaml".format(config_file)))
     # cfg.freeze()
     default_setup(cfg, None)
@@ -251,6 +253,8 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
     else:
         toeval = ['model_final.pth']
         f_eval = ['final']
+    toeval = ['model_final.pth']
+    f_eval = ['final']
     print('Checkpoints to be evaluated: ',toeval)
     for checkpoint, eval_folder in zip(toeval,f_eval):
         cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, checkpoint) 
@@ -335,6 +339,11 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 
 
                 for i, obj in enumerate(obj_anns):
+
+
+                    obj.print_object()
+
+
                     if i == 5:
                       break
                     kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)
