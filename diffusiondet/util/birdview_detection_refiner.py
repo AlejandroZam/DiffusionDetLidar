@@ -28,8 +28,10 @@ class BirdviewDetectionRefiner:
         bv_ctr_x = obj.xmin
         bv_ctr_y = obj.ymin
 
-        bv_width = obj.xmax * 0.05
-        bv_height = obj.ymax * 0.05
+
+
+        bv_width = obj.xmax * self.bvres
+        bv_height = obj.ymax  * self.bvres
         print('bv width: ',bv_width)
         print('bv height: ',bv_height)
 
