@@ -90,6 +90,8 @@ def getfrombins(cl,bins):
 idclass = { 0:'Car', 1:'Van', 2:'Truck', 3:'Pedestrian', 4:'Person_sitting',  5:'Cyclist', 6:'Tram', 7:'Misc', 8:'DontCare'}
 idclass3 = { 0:'Car', 1:'Pedestrian', 2:'Cyclist'}
 def catName(category_id,nclass):
+
+    nclass = 3
     print('number of classes: ',nclass)
     if nclass > 3:
         _idclass = idclass
@@ -157,12 +159,18 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
         lbl = catName(labels[k],nclass)
         ann,obj3d,strAnn = prepareAnn(lbl,alpha[k],box,score=scores[k],h=h[k,0],z=h[k,1])
         print('pre refinement: ',strAnn)
+      
+        
 
         if hwrot and height_training:
+            print('refine hwrot: ', hwrot)
+            print('refine height: ', height_training)
             refiner.refine_detection_rotated_wheight(obj3d)
         elif hwrot:
+            print('refine hwrot: ', hwrot)
             refiner.refine_detection_rotated(obj3d)
         else:
+            print('refine detection no hwrot or height: ')
             refiner.refine_detection(obj3d)
         if obj3d.height == -1:
             continue
@@ -220,6 +228,13 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
     add_model_ema_configs(cfg)
     cfg.DATASETS.TEST = ("kitti_train",)
     cfg.OUTPUT_DIR = '/content/output'
+    cfg.VIEWPOINT = False
+    cfg.VIEWPOINT_RESIDUAL = False
+    cfg.ROTATED_BOX_TRAINING = False
+
+    
+    cfg.MODEL.ROI_HEADS.NUM_CLASSES = 3 
+    # cfg.MODEL.RPN.BBOX_REG_WEIGHTS = (1.0, 1.0, 1.0, 1.0)
     cfg.merge_from_file(os.path.join(detectron2_root,"configs/{}.yaml".format(config_file)))
     # cfg.freeze()
     default_setup(cfg, None)
@@ -237,7 +252,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 
     val_path = detectron2_root+"/datasets/bv_kitti/annotations/{}.json".format(ann_val)
     register_coco_instances("kitti_train", {}, val_path, detectron2_root+'/datasets/bv_kitti/image', extra_arguments=optional_arguments)
-
+    calib_root_path = '/content/DiffusionDetLidar/datasets/bv_kitti/label'
     toeval = []
     models = os.listdir(cfg.OUTPUT_DIR)
     for model in models:
@@ -261,7 +276,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
     print('Checkpoints to be evaluated: ',toeval)
     for checkpoint, eval_folder in zip(toeval,f_eval):
         cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, checkpoint) 
-
+        
         cfg.MODEL.DiffusionDet.L1_HEIGHT_WEIGHT= (5.0, 0.5, 10.0)
         cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = score_thresh 
         cfg.MODEL.ROI_HEADS.NMS_THRESH_TEST = nms_thresh
@@ -293,6 +308,30 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 outputs = predictor(im)
                 # print('outputs:',outputs)
                 list_anns, obj_anns, instances = prepare_for_coco_detection_KITTI(outputs["instances"].to("cpu"), ann_outdir, d["file_name"], write, kitti_calib_path, nclasses, cfg.VIEWPOINT, cfg.VP_BINS, cfg.VIEWPOINT_RESIDUAL, cfg.ROTATED_BOX_TRAINING, cfg.HEIGHT_TRAINING)
+                #ground truth
+                gt_label_path = os.path.join(calib_root_path,d["file_name"][-10:].split('.png')[0]+'.txt')
+                print( 'gt label: ',gt_label_path)
+                f = open(gt_label_path)
+                gt_labels = f.readlines()
+
+                f.close()
+
+                gt_objs = []
+
+                for x in gt_labels:
+                  print('raw label: ' ,x)
+                  if x.split(' ')[0] ==  'Pedestrian' or x.split(' ')[0] == 'Cyclist' or x.split(' ')[0] == 'Car':
+                    temp = Object3d(x)
+                    temp.print_object
+                    gt_objs.append(temp)
+                print('ground truth: ')
+                for gt in gt_objs:
+                  gt.yaw = -10
+                  print('name: ',gt.kind_name,' trunc: ',gt.truncated,' occ: ',gt.occluded,' alpha: ',gt.alpha,' xmin: ',gt.xmin,' ymin: ',gt.ymin,' xmax: ',gt.xmax,' ymax: ',gt.ymax,' height: ',gt.height,' width: ',gt.width,' length: ',gt.length,' yaw: ',gt.yaw)
+                #ground truth
+
+
+
 
 
                 fixed_list_anns = []
@@ -313,10 +352,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
            
                   elif obj.kind_name == 'Truck':
                     obj.kind_name = 'Cyclist'
-    
 
-
-                #kitti_results.append(list_anns)
                 kitti_results.append(fixed_list_anns)
             else:
                 print('why we here')
@@ -339,6 +375,9 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 calib_file = os.path.join(kitti_calib_path.replace('/training',''),d["file_name"][-10:].split('.png')[0]+'.txt')
                 # Show obstacles
 
+                for j, gt in enumerate(gt_objs):
+                  print('ground tuth: ',j,' ')
+                  gt.print_object()
 
 
                 for i, obj in enumerate(obj_anns):

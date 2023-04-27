@@ -27,8 +27,12 @@ class BirdviewDetectionRefiner:
         '''
         bv_ctr_x = obj.xmin
         bv_ctr_y = obj.ymin
+
         bv_width = obj.xmax
         bv_height = obj.ymax
+        print('bv width: ',bv_width)
+        print('bv height: ',bv_height)
+
         #ground_height = obj.location.z
         object_z = obj.location.z
 
