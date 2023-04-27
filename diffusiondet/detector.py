@@ -319,7 +319,7 @@ class DiffusionDet(nn.Module):
             images = nested_tensor_from_tensor_list(images)
 
         # Feature Extraction.
-        print(images.tensor.size())
+        # print(images.tensor.size())
         src = self.backbone(images.tensor)
         features = list()
         for f in self.in_features:

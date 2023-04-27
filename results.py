@@ -90,6 +90,7 @@ def getfrombins(cl,bins):
     return bin
 
 idclass = { 0:'Car', 1:'Van', 2:'Truck', 3:'Pedestrian', 4:'Person_sitting',  5:'Cyclist', 6:'Tram', 7:'Misc', 8:'DontCare'}
+classtoid3 = { 'Car':0,'Pedestrian':1,'Cyclist':2}
 idclass3 = { 0:'Car', 1:'Pedestrian', 2:'Cyclist'}
 def catName(category_id,nclass):
 
@@ -283,6 +284,16 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
     toeval = ['model_final.pth']
     f_eval = ['final']
     print('Checkpoints to be evaluated: ',toeval)
+
+    # dict to hold scores
+    # tp fp fn tn
+
+
+
+    eval_res = { 'Car':[0,0,0,0],'Pedestrian':[0,0,0,0],'Cyclist':[0,0,0,0]}
+
+
+
     for checkpoint, eval_folder in zip(toeval,f_eval):
         cfg.MODEL.WEIGHTS = os.path.join(cfg.OUTPUT_DIR, checkpoint) 
         
@@ -331,12 +342,12 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                   # print('raw label: ' ,x)
                   if x.split(' ')[0] ==  'Pedestrian' or x.split(' ')[0] == 'Cyclist' or x.split(' ')[0] == 'Car':
                     temp = Object3d(x)
-                    temp.print_object
+                    # temp.print_object
                     gt_objs.append(temp)
-                print('ground truth: ')
+                #print('ground truth: ')
                 for gt in gt_objs:
                   gt.yaw = -10
-                  print('name: ',gt.kind_name,' trunc: ',gt.truncated,' occ: ',gt.occluded,' alpha: ',gt.alpha,' xmin: ',gt.xmin,' ymin: ',gt.ymin,' xmax: ',gt.xmax,' ymax: ',gt.ymax,' height: ',gt.height,' width: ',gt.width,' length: ',gt.length,' yaw: ',gt.yaw)
+                  #print('name: ',gt.kind_name,' trunc: ',gt.truncated,' occ: ',gt.occluded,' alpha: ',gt.alpha,' xmin: ',gt.xmin,' ymin: ',gt.ymin,' xmax: ',gt.xmax,' ymax: ',gt.ymax,' height: ',gt.height,' width: ',gt.width,' length: ',gt.length,' yaw: ',gt.yaw)
                 #ground truth
 
 
@@ -388,30 +399,42 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 #   print('ground tuth: ',j,' ')
                 #   kitti_im, im, _ = _draw_projection_obstacle_to_cam(gt, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=True)
                 #   gt.print_object()
+                # tp fp fn tn
 
 
                 for i, obj in enumerate(obj_anns):
 
-                    if obj.score > score_thresh:
-                      obj.print_object()
+                    #obj.print_object()
+                    fn_flag = True
+                    for gt in gt_objs:
+                      if gt.kind_name == obj.kind_name and obj.score >= score_thresh:
+                        fn_flag = False
+                        eval_res[gt.kind_name][0] +=1
+                        # kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)
+                        # if save_img:
+                        #     im_outdir = os.path.join(cfg.OUTPUT_DIR,'images')
+                        #     if not os.path.exists(im_outdir):
+                        #         os.makedirs(im_outdir)
+                        #     cv2.imwrite(os.path.join(im_outdir,'3D_'+d["file_name"][-10:]), kitti_im)
+                        #     cv2.imwrite(os.path.join(im_outdir,'BEV_'+d["file_name"][-10:]), im)
+                          
+                      elif gt.kind_name == obj.kind_name and obj.score < score_thresh:
+                        eval_res[gt.kind_name][1] +=1
 
+                      
 
- 
-                      kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)
-                      # cv2.imshow('image',kitti_im)
-                      # cv2.imshow('bv_image',im)
-                      if save_img:
-                          im_outdir = os.path.join(cfg.OUTPUT_DIR,'images')
-                          if not os.path.exists(im_outdir):
-                              os.makedirs(im_outdir)
-                          cv2.imwrite(os.path.join(im_outdir,'3D_'+d["file_name"][-10:]), kitti_im)
-                          cv2.imwrite(os.path.join(im_outdir,'BEV_'+d["file_name"][-10:]), im)
-                # cv2.waitKey(0)
-                # cv2.destroyAllWindows()
+                    if fn_flag and obj.score >= score_thresh:
+                      eval_res[gt.kind_name][2] +=1
+
+   
             elif c > max(sample_idx) and not write:
                 # print('c value bigger than max index: ',c)
                 break
+    print(eval_res)
 
+    print('car mAP: ',eval_res['Car'][0]/(eval_res['Car'][0] + eval_res['Car'][2]))
+    print('car mAP: ',eval_res['Pedestrian'][0]/(eval_res['Pedestrian'][0] + eval_res['Pedestrian'][2]))
+    print('car mAP: ',eval_res['Cyclist'][0]/(eval_res['Cyclist'][0] + eval_res['Cyclist'][2]))
 if __name__ == '__main__':
     args = parse_args()
 
