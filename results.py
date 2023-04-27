@@ -215,6 +215,13 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     # print(instance)
     return  im_ann, im_ann_obj, instance
 
+
+# def get_2dbox_iou():
+
+
+# def get_3dbox_iou();
+
+
 def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test, score_thresh , nms_thresh, kitti_root ):
     # KITTI paths
     kitti_im_path = kitti_root+'/image_2'
@@ -383,21 +390,20 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 
                 for i, obj in enumerate(obj_anns):
 
+                    if obj.score > score_thresh:
+                      obj.print_object()
 
-                    obj.print_object()
 
-
-                    if i == 5:
-                      break
-                    kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)
-                # cv2.imshow('image',kitti_im)
-                # cv2.imshow('bv_image',im)
-                if save_img:
-                    im_outdir = os.path.join(cfg.OUTPUT_DIR,'images')
-                    if not os.path.exists(im_outdir):
-                        os.makedirs(im_outdir)
-                    cv2.imwrite(os.path.join(im_outdir,'3D_'+d["file_name"][-10:]), kitti_im)
-                    cv2.imwrite(os.path.join(im_outdir,'BEV_'+d["file_name"][-10:]), im)
+ 
+                      kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)
+                      # cv2.imshow('image',kitti_im)
+                      # cv2.imshow('bv_image',im)
+                      if save_img:
+                          im_outdir = os.path.join(cfg.OUTPUT_DIR,'images')
+                          if not os.path.exists(im_outdir):
+                              os.makedirs(im_outdir)
+                          cv2.imwrite(os.path.join(im_outdir,'3D_'+d["file_name"][-10:]), kitti_im)
+                          cv2.imwrite(os.path.join(im_outdir,'BEV_'+d["file_name"][-10:]), im)
                 # cv2.waitKey(0)
                 # cv2.destroyAllWindows()
             elif c > max(sample_idx) and not write:
