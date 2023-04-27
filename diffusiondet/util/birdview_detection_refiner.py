@@ -28,8 +28,8 @@ class BirdviewDetectionRefiner:
         bv_ctr_x = obj.xmin
         bv_ctr_y = obj.ymin
 
-        bv_width = obj.xmax
-        bv_height = obj.ymax
+        bv_width = obj.xmax * 0.05
+        bv_height = obj.ymax * 0.05
         print('bv width: ',bv_width)
         print('bv height: ',bv_height)
 
@@ -62,6 +62,21 @@ class BirdviewDetectionRefiner:
         obj.length = object_length
         obj.height = object_height
         obj.yaw = obj.alpha
+        # Refine obstacle
+        # if obj.kind_name == 'Car':
+        #     object_width =self.bvres * 1.8 # Fixed width for cars.
+        #     obj.width = object_width
+
+        # elif obj.kind_name == 'Pedestrian':
+        #     object_width = self.bvres *0.6 # Fixed width
+        #     obj.width = object_width
+
+        # elif obj.kind_name == 'Cyclist':
+        #     object_width =self.bvres * 0.6 # Fixed width
+        #     obj.width = object_width
+
+
+
 
     def refine_detection_rotated(self, obj):
         ''' 
