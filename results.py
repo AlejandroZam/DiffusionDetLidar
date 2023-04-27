@@ -90,6 +90,7 @@ def getfrombins(cl,bins):
 idclass = { 0:'Car', 1:'Van', 2:'Truck', 3:'Pedestrian', 4:'Person_sitting',  5:'Cyclist', 6:'Tram', 7:'Misc', 8:'DontCare'}
 idclass3 = { 0:'Car', 1:'Pedestrian', 2:'Cyclist'}
 def catName(category_id,nclass):
+    print('number of classes: ',nclass)
     if nclass > 3:
         _idclass = idclass
     elif nclass == 3:
@@ -145,6 +146,7 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     calib_file = os.path.join(kitti_calib_path.replace('/training',''),filename[-10:].split('.png')[0]+'.txt')
 
     # Refiner for 3D
+    print('pixel reslution: ', bvres)
     refiner = BirdviewDetectionRefiner(bv_image, bv_ground, bvres, velodyne_h, only_front)
 
     im_ann = []
@@ -154,6 +156,7 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     for k, box in enumerate(boxes):
         lbl = catName(labels[k],nclass)
         ann,obj3d,strAnn = prepareAnn(lbl,alpha[k],box,score=scores[k],h=h[k,0],z=h[k,1])
+        print('pre refinement: ',strAnn)
 
         if hwrot and height_training:
             refiner.refine_detection_rotated_wheight(obj3d)
@@ -196,7 +199,7 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
         im_ann.append(ann)
         im_ann_obj.append(obj3d)
         strAnn = ' '.join([str(x) for x in ann])
-        
+        print('post refinement: ', strAnn)
         if write:
             file_ann.write(strAnn+'\n')
     if write:

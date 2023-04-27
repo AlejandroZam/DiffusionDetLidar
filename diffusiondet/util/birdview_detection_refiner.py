@@ -12,7 +12,11 @@ class BirdviewDetectionRefiner:
 
         self.only_front = only_front
         self.bv_image = bv_image
+        print('front image size: ', bv_image.size)
+
+
         self.bv_ground = bv_ground
+        print('bev image size: ', self.bv_image.shape)
         self.bvres = bvres
         self.velodyne_h = velodyne_h
         (self.bvheight, self.bvwidth, self.channels) = self.bv_image.shape

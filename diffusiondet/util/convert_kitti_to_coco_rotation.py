@@ -215,6 +215,11 @@ def convert_kitti_training(data_dir, out_dir, val_file, train_file, only_eval_cl
 
                 for obj in pre_objs:
                     o = obj['type']
+                    print('hee')
+                    print(obj['bbox_xmin'])
+                    print(obj['bbox_ymin'])
+                    print(obj['bbox_xmax'])
+                    print(obj['bbox_ymax'])
                     if isinstance(o,(bytes,np.bytes_)):
                         o = o.decode("utf-8")
                     label = category_dict.get(o,8) #Default value just in case
