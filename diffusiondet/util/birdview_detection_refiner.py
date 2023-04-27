@@ -25,13 +25,30 @@ class BirdviewDetectionRefiner:
         ''' 
         This function only takes the values, decode them and finally return them
         '''
-        bv_ctr_x = obj.xmin
-        bv_ctr_y = obj.ymin
+        #Refine obstacle
+        # if obj.kind_name == 'Car':
 
+        #     obj.xmin = obj.xmin + 1.8 /2
+        #     obj.xmin = obj.xmin + 1.8 /2
+        # elif obj.kind_name == 'Pedestrian':
+        #     object_width = self.bvres *0.6 # Fixed width
+        #     obj.xmin = obj.xmin + 0.6 /2
+        #     obj.xmin = obj.xmin + 0.6 /2
+        # elif obj.kind_name == 'Cyclist':
+        #     object_width =self.bvres * 0.6 # Fixed width
+        #     obj.xmin = obj.xmin + 0.6 /2
+        #     obj.xmin = obj.xmin + 0.6 /2
 
 
         bv_width = obj.xmax * self.bvres
         bv_height = obj.ymax  * self.bvres
+
+
+
+        bv_ctr_x = obj.xmin
+        bv_ctr_y = obj.ymin
+
+
         print('bv width: ',bv_width)
         print('bv height: ',bv_height)
 

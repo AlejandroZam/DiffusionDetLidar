@@ -377,6 +377,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 
                 for j, gt in enumerate(gt_objs):
                   print('ground tuth: ',j,' ')
+                  kitti_im, im, _ = _draw_projection_obstacle_to_cam(gt, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=True)
                   gt.print_object()
 
 

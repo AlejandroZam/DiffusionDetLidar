@@ -60,7 +60,7 @@ class Object3d(object):
 
 
   def print_object(self):
-    print('here')
+
     print('kind_name, truncated, occluded, alpha: %s, %d, %d, %f' % \
           (self.kind_name, self.truncated, self.occluded, self.alpha))
     print('2d bbox (x0,y0,x1,y1): %f, %f, %f, %f' % \
