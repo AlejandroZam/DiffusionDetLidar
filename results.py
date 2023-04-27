@@ -57,6 +57,8 @@ def parse_args():
         '--nms', help="NMS IoU for the overlapping obstacles per class", default=0.3, type=float)
     parser.add_argument(
         '--kitti_root', help="Path of the KITTI dataset", default='/content/DiffusionDetLidar/datasets/bv_kitti/training', type=str)
+    parser.add_argument(
+        '--eval_only', help="Write results in KITTI format", default=False, action="store_true")
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
@@ -92,7 +94,7 @@ idclass3 = { 0:'Car', 1:'Pedestrian', 2:'Cyclist'}
 def catName(category_id,nclass):
 
     nclass = 3
-    print('number of classes: ',nclass)
+    # print('number of classes: ',nclass)
     if nclass > 3:
         _idclass = idclass
     elif nclass == 3:
@@ -134,7 +136,7 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     # Image BV
     bv_image = cv2.imread(filename).astype(np.uint8)
 
-    print('image size: ',bv_image.size)
+    # print('image size: ',bv_image.size)
 
     if height_training:
         bv_ground = None
@@ -148,7 +150,7 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     calib_file = os.path.join(kitti_calib_path.replace('/training',''),filename[-10:].split('.png')[0]+'.txt')
 
     # Refiner for 3D
-    print('pixel reslution: ', bvres)
+    # print('pixel reslution: ', bvres)
     refiner = BirdviewDetectionRefiner(bv_image, bv_ground, bvres, velodyne_h, only_front)
 
     im_ann = []
@@ -158,19 +160,19 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
     for k, box in enumerate(boxes):
         lbl = catName(labels[k],nclass)
         ann,obj3d,strAnn = prepareAnn(lbl,alpha[k],box,score=scores[k],h=h[k,0],z=h[k,1])
-        print('pre refinement: ',strAnn)
+        # print('pre refinement: ',strAnn)
       
         
 
         if hwrot and height_training:
-            print('refine hwrot: ', hwrot)
-            print('refine height: ', height_training)
+            # print('refine hwrot: ', hwrot)
+            # print('refine height: ', height_training)
             refiner.refine_detection_rotated_wheight(obj3d)
         elif hwrot:
-            print('refine hwrot: ', hwrot)
+            # print('refine hwrot: ', hwrot)
             refiner.refine_detection_rotated(obj3d)
         else:
-            print('refine detection no hwrot or height: ')
+            # print('refine detection no hwrot or height: ')
             refiner.refine_detection(obj3d)
         if obj3d.height == -1:
             continue
@@ -207,7 +209,7 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
         im_ann.append(ann)
         im_ann_obj.append(obj3d)
         strAnn = ' '.join([str(x) for x in ann])
-        print('post refinement: ', strAnn)
+        # print('post refinement: ', strAnn)
         if write:
             file_ann.write(strAnn+'\n')
     if write:
@@ -222,7 +224,7 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
 # def get_3dbox_iou();
 
 
-def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test, score_thresh , nms_thresh, kitti_root ):
+def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test, score_thresh , nms_thresh, kitti_root ,eval_only):
     # KITTI paths
     kitti_im_path = kitti_root+'/image_2'
     kitti_calib_path = kitti_root+'/calib'
@@ -298,7 +300,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
         c = 0
 
         sample_idx = range(img2show) if img2show != 0 else [-1]
-        print('sample indx: ',sample_idx)
+        # print('sample indx: ',sample_idx)
         logger.info("Showing {} predictions".format(str(img2show)))
         ann_outdir = os.path.join(cfg.OUTPUT_DIR,'annotations',eval_folder)
         if not os.path.exists(ann_outdir):
@@ -317,7 +319,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 list_anns, obj_anns, instances = prepare_for_coco_detection_KITTI(outputs["instances"].to("cpu"), ann_outdir, d["file_name"], write, kitti_calib_path, nclasses, cfg.VIEWPOINT, cfg.VP_BINS, cfg.VIEWPOINT_RESIDUAL, cfg.ROTATED_BOX_TRAINING, cfg.HEIGHT_TRAINING)
                 #ground truth
                 gt_label_path = os.path.join(calib_root_path,d["file_name"][-10:].split('.png')[0]+'.txt')
-                print( 'gt label: ',gt_label_path)
+                # print( 'gt label: ',gt_label_path)
                 f = open(gt_label_path)
                 gt_labels = f.readlines()
 
@@ -326,7 +328,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 gt_objs = []
 
                 for x in gt_labels:
-                  print('raw label: ' ,x)
+                  # print('raw label: ' ,x)
                   if x.split(' ')[0] ==  'Pedestrian' or x.split(' ')[0] == 'Cyclist' or x.split(' ')[0] == 'Car':
                     temp = Object3d(x)
                     temp.print_object
@@ -362,7 +364,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 
                 kitti_results.append(fixed_list_anns)
             else:
-                print('why we here')
+                # print('why we here')
                 is_kitti_ann=True
                 with open(file,'r') as f:
                     list_anns = f.read().splitlines()
@@ -370,9 +372,9 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 for ann in list_anns:
                     obj_anns.append(Object3d(ann))
 
-            print('c value: ', c)
+            # print('c value: ', c)
             if c in sample_idx:
-                print('c in smaple idx')
+                # print('c in smaple idx')
                 # Change BV aspect
                 nonzero = np.where(im>0)
                 im[nonzero]=255-im[nonzero]
@@ -382,10 +384,10 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 calib_file = os.path.join(kitti_calib_path.replace('/training',''),d["file_name"][-10:].split('.png')[0]+'.txt')
                 # Show obstacles
 
-                for j, gt in enumerate(gt_objs):
-                  print('ground tuth: ',j,' ')
-                  kitti_im, im, _ = _draw_projection_obstacle_to_cam(gt, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=True)
-                  gt.print_object()
+                # for j, gt in enumerate(gt_objs):
+                #   print('ground tuth: ',j,' ')
+                #   kitti_im, im, _ = _draw_projection_obstacle_to_cam(gt, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=True)
+                #   gt.print_object()
 
 
                 for i, obj in enumerate(obj_anns):
@@ -407,10 +409,10 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 # cv2.waitKey(0)
                 # cv2.destroyAllWindows()
             elif c > max(sample_idx) and not write:
-                print('c value bigger than max index: ',c)
+                # print('c value bigger than max index: ',c)
                 break
 
 if __name__ == '__main__':
     args = parse_args()
 
-    main(args.config_file, args.ann_val, args.write, args.img2show, args.save_img, args.eval_chkp, args.force_test, args.score, args.nms, args.kitti_root)
+    main(args.config_file, args.ann_val, args.write, args.img2show, args.save_img, args.eval_chkp, args.force_test, args.score, args.nms, args.kitti_root,args.eval_only)

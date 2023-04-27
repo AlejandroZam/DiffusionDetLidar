@@ -12,11 +12,11 @@ class BirdviewDetectionRefiner:
 
         self.only_front = only_front
         self.bv_image = bv_image
-        print('front image size: ', bv_image.size)
+        # print('front image size: ', bv_image.size)
 
 
         self.bv_ground = bv_ground
-        print('bev image size: ', self.bv_image.shape)
+        # print('bev image size: ', self.bv_image.shape)
         self.bvres = bvres
         self.velodyne_h = velodyne_h
         (self.bvheight, self.bvwidth, self.channels) = self.bv_image.shape
@@ -49,8 +49,8 @@ class BirdviewDetectionRefiner:
         bv_ctr_y = obj.ymin
 
 
-        print('bv width: ',bv_width)
-        print('bv height: ',bv_height)
+        # print('bv width: ',bv_width)
+        # print('bv height: ',bv_height)
 
         #ground_height = obj.location.z
         object_z = obj.location.z
@@ -63,8 +63,8 @@ class BirdviewDetectionRefiner:
         velo_ctr_x = -(bv_ctr_y - effective_bvheight) * self.bvres
         velo_ctr_y = -(bv_ctr_x - self.bvwidth / 2) * self.bvres
 
-        print('velo ctrx : , ',velo_ctr_x)
-        print('velo ctry: , ',velo_ctr_y)
+        # print('velo ctrx : , ',velo_ctr_x)
+        # print('velo ctry: , ',velo_ctr_y)
 
 
         #velo_ctr_z = ground_height - self.velodyne_h  
@@ -311,8 +311,8 @@ class BirdviewDetectionRefiner:
         # print yaw
         yaw -= math.pi / 2
 
-        print(w * math.sin(yaw))
-        print(H * math.cos(yaw))
+        # print(w * math.sin(yaw))
+        # print(H * math.cos(yaw))
         # print H - abs(w * math.sin(yaw))
         # TODO: Fix this shortcuts
         if abs(math.cos(yaw)) < 0.01:
