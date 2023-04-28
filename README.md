@@ -1,8 +1,5 @@
 # DiffusionDetLidar
 
-In order to run use the colab notebook file
-
-there will be comments before each cell to run and how to obtain any data but in a nutshell here are the steps
 
 
 1. first you will need to setup detectron2, utilize req.txt to setup your environment: 
