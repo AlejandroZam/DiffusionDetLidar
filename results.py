@@ -434,15 +434,16 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
             elif c > max(sample_idx) and not write:
                 # print('c value bigger than max index: ',c)
                 break
-    print(eval_res)
-    # tp / fn + tp
-    # print('car recall: ',eval_res['Car'][0]/(eval_res['Car'][0] + eval_res['Car'][2])*100)
-    # print('Pedestrian recall: ',eval_res['Pedestrian'][0]/(eval_res['Pedestrian'][0] + eval_res['Pedestrian'][2])*100)
-    # print('Cyclist recall: ',eval_res['Cyclist'][0]/(eval_res['Cyclist'][0] + eval_res['Cyclist'][2])*100)
-    # # tp/tp+fp
-    # print('car AP: ',eval_res['Car'][0]/(eval_res['Car'][0] + eval_res['Car'][1])*100)
-    # print('Pedestrian AP: ',eval_res['Pedestrian'][0]/(eval_res['Pedestrian'][0] + eval_res['Pedestrian'][1])*100)
-    # print('Cyclist AP: ',eval_res['Cyclist'][0]/(eval_res['Cyclist'][0] + eval_res['Cyclist'][1])*100)
+    if eval_only:            
+      print(eval_res)
+      # tp / fn + tp
+      print('car recall: ',eval_res['Car'][0]/(eval_res['Car'][0] + eval_res['Car'][2])*100)
+      print('Pedestrian recall: ',eval_res['Pedestrian'][0]/(eval_res['Pedestrian'][0] + eval_res['Pedestrian'][2])*100)
+      print('Cyclist recall: ',eval_res['Cyclist'][0]/(eval_res['Cyclist'][0] + eval_res['Cyclist'][2])*100)
+      # tp/tp+fp
+      print('car AP: ',eval_res['Car'][0]/(eval_res['Car'][0] + eval_res['Car'][1])*100)
+      print('Pedestrian AP: ',eval_res['Pedestrian'][0]/(eval_res['Pedestrian'][0] + eval_res['Pedestrian'][1])*100)
+      print('Cyclist AP: ',eval_res['Cyclist'][0]/(eval_res['Cyclist'][0] + eval_res['Cyclist'][1])*100)
 if __name__ == '__main__':
     args = parse_args()
 
