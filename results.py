@@ -237,7 +237,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
     add_diffusiondet_config(cfg)
     add_model_ema_configs(cfg)
     cfg.DATASETS.TEST = ("kitti_train",)
-    cfg.OUTPUT_DIR = '/content/output'
+    cfg.OUTPUT_DIR = '/content/output_swinbase'
     cfg.VIEWPOINT = False
     cfg.VIEWPOINT_RESIDUAL = False
     cfg.ROTATED_BOX_TRAINING = False
@@ -410,13 +410,14 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                       if gt.kind_name == obj.kind_name and obj.score >= score_thresh:
                         fn_flag = False
                         eval_res[gt.kind_name][0] +=1
-                        # kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)
-                        # if save_img:
-                        #     im_outdir = os.path.join(cfg.OUTPUT_DIR,'images')
-                        #     if not os.path.exists(im_outdir):
-                        #         os.makedirs(im_outdir)
-                        #     cv2.imwrite(os.path.join(im_outdir,'3D_'+d["file_name"][-10:]), kitti_im)
-                        #     cv2.imwrite(os.path.join(im_outdir,'BEV_'+d["file_name"][-10:]), im)
+                        if save_img:
+                          kitti_im, im, _ = _draw_projection_obstacle_to_cam(obj, calib_file, bvres, only_front, True, kitti_im, im, is_kitti_ann=is_kitti_ann)
+
+                          im_outdir = os.path.join(cfg.OUTPUT_DIR,'images')
+                          if not os.path.exists(im_outdir):
+                              os.makedirs(im_outdir)
+                          cv2.imwrite(os.path.join(im_outdir,'3D_'+d["file_name"][-10:]), kitti_im)
+                          cv2.imwrite(os.path.join(im_outdir,'BEV_'+d["file_name"][-10:]), im)
                           
                       elif gt.kind_name == obj.kind_name and obj.score < score_thresh:
                         eval_res[gt.kind_name][1] +=1
@@ -432,13 +433,13 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 break
     print(eval_res)
     # tp / fn + tp
-    print('car recall: ',eval_res['Car'][0]/(eval_res['Car'][0] + eval_res['Car'][2])*100)
-    print('Pedestrian recall: ',eval_res['Pedestrian'][0]/(eval_res['Pedestrian'][0] + eval_res['Pedestrian'][2])*100)
-    print('Cyclist recall: ',eval_res['Cyclist'][0]/(eval_res['Cyclist'][0] + eval_res['Cyclist'][2])*100)
-    # tp/tp+fp
-    print('car AP: ',eval_res['Car'][0]/(eval_res['Car'][0] + eval_res['Car'][1])*100)
-    print('Pedestrian AP: ',eval_res['Pedestrian'][0]/(eval_res['Pedestrian'][0] + eval_res['Pedestrian'][1])*100)
-    print('Cyclist AP: ',eval_res['Cyclist'][0]/(eval_res['Cyclist'][0] + eval_res['Cyclist'][1])*100)
+    # print('car recall: ',eval_res['Car'][0]/(eval_res['Car'][0] + eval_res['Car'][2])*100)
+    # print('Pedestrian recall: ',eval_res['Pedestrian'][0]/(eval_res['Pedestrian'][0] + eval_res['Pedestrian'][2])*100)
+    # print('Cyclist recall: ',eval_res['Cyclist'][0]/(eval_res['Cyclist'][0] + eval_res['Cyclist'][2])*100)
+    # # tp/tp+fp
+    # print('car AP: ',eval_res['Car'][0]/(eval_res['Car'][0] + eval_res['Car'][1])*100)
+    # print('Pedestrian AP: ',eval_res['Pedestrian'][0]/(eval_res['Pedestrian'][0] + eval_res['Pedestrian'][1])*100)
+    # print('Cyclist AP: ',eval_res['Cyclist'][0]/(eval_res['Cyclist'][0] + eval_res['Cyclist'][1])*100)
 if __name__ == '__main__':
     args = parse_args()
 
