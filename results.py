@@ -260,7 +260,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
     if 1:
         optional_arguments.append('height')
 
-    val_path = detectron2_root+"/datasets/bv_kitti/annotations/{}.json".format(ann_val)
+    val_path = detectron2_root+"/content/DiffusionDetLidar/archive/annotations/{}.json".format(ann_val)
     register_coco_instances("kitti_val", {}, val_path, detectron2_root+'/datasets/bv_kitti/image', extra_arguments=optional_arguments)
     calib_root_path = '/content/DiffusionDetLidar/datasets/bv_kitti/label'
     toeval = []
