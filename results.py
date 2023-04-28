@@ -46,7 +46,7 @@ def parse_args():
     parser.add_argument(
         '--img2show', help="Show a fixed number of images, 0 to eliminate the visualization", default=0, type=int)
     parser.add_argument(
-        '--save_img', help="Save images showed", default=False, action="store_true")
+        '--save_img', help="Save image results", default=False, action="store_true")
     parser.add_argument(
         '--eval_chkp', help="Starting from the second half of the checkpoints, the rest will be evaluated with a certain interval specified here, 1 to evaluate all of them", default=1, type=int)
     parser.add_argument(
@@ -60,7 +60,7 @@ def parse_args():
     parser.add_argument(
         '--eval_only', help="run evaluations only", default=False, action="store_true")
     parser.add_argument(
-        '--weights_dir', help="Name of the configuration to use without extension", default='/content/output', type=str)        
+        '--weights_dir', help="Name of model weights folder path", default='/content/output', type=str)        
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)

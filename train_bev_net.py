@@ -332,7 +332,6 @@ def main(args):
                 training_classes, ann_bins, cfg.VIEWPOINT, cfg.VIEWPOINT_RESIDUAL, cfg.ROTATED_BOX_TRAINING, cfg.HEIGHT_TRAINING)
     
 
-    exit()
     register_coco_instances("kitti_train", {}, train_path, detectron2_root+'/datasets/bv_kitti/image', extra_arguments=optional_arguments)
 
 
