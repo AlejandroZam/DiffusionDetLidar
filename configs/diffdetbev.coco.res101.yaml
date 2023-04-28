@@ -1,6 +1,6 @@
 _BASE_: "Base-DiffusionDet101.yaml"
 MODEL:
-  WEIGHTS: "/content/diffdet_coco_res101.pth"
+  WEIGHTS: "diffdet_coco_res101.pth"
   RESNETS:
     DEPTH: 101
     STRIDE_IN_1X1: False

@@ -1,6 +1,6 @@
 _BASE_: "Base-DiffusionDetswinbase.yaml"
 MODEL:
-  WEIGHTS: "/content/DiffusionDetLidar/diffdet_coco_swinbase.pth"
+  WEIGHTS: "DiffusionDetLidar/diffdet_coco_swinbase.pth"
   BACKBONE:
     NAME: build_swintransformer_fpn_backbone
   SWIN:

@@ -56,11 +56,11 @@ def parse_args():
     parser.add_argument(
         '--nms', help="NMS IoU for the overlapping obstacles per class", default=0.3, type=float)
     parser.add_argument(
-        '--kitti_root', help="Path of the KITTI dataset", default='/content/DiffusionDetLidar/datasets/bv_kitti/testing', type=str)
+        '--kitti_root', help="Path of the KITTI dataset", default='DiffusionDetLidar/datasets/bv_kitti/testing', type=str)
     parser.add_argument(
         '--eval_only', help="run evaluations only", default=False, action="store_true")
     parser.add_argument(
-        '--weights_dir', help="Name of model weights folder path", default='/content/output', type=str)        
+        '--weights_dir', help="Name of model weights folder path", default='output', type=str)        
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
@@ -68,7 +68,7 @@ def parse_args():
 
 
 
-detectron2_root = '/content/DiffusionDetLidar'
+detectron2_root = '/home/azamora/DiffusionDetLidar'
 
 
 
@@ -264,7 +264,8 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 
     val_path = detectron2_root+"/archive/annotations/{}.json".format(ann_val)
     register_coco_instances("kitti_val", {}, val_path, detectron2_root+'/datasets/bv_kitti/image', extra_arguments=optional_arguments)
-    calib_root_path = '/content/DiffusionDetLidar/datasets/bv_kitti/label'
+    calib_root_path =detectron2_root+ '/datasets/bv_kitti/label'
+
     toeval = []
     models = os.listdir(cfg.OUTPUT_DIR)
     for model in models:
@@ -321,6 +322,8 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 
         for image_id, d in enumerate(val_bv_dicts):
             c += 1
+            d['file_name'] = d['file_name'].replace('/content/DiffusionDetLidar',detectron2_root)
+            #print(d)
             file = os.path.join(ann_outdir,d["file_name"][-10:].split('.png')[0]+'.txt')
 
             # d['file_name'].replace('/home/alejo')
@@ -334,6 +337,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
                 # print('outputs:',outputs)
                 list_anns, obj_anns, instances = prepare_for_coco_detection_KITTI(outputs["instances"].to("cpu"), ann_outdir, d["file_name"], write, kitti_calib_path, nclasses, cfg.VIEWPOINT, cfg.VP_BINS, cfg.VIEWPOINT_RESIDUAL, cfg.ROTATED_BOX_TRAINING, cfg.HEIGHT_TRAINING)
                 #ground truth
+   
                 gt_label_path = os.path.join(calib_root_path,d["file_name"][-10:].split('.png')[0]+'.txt')
                 # print( 'gt label: ',gt_label_path)
                 f = open(gt_label_path)

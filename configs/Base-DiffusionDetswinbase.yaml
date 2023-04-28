@@ -1,6 +1,6 @@
 MODEL:
   META_ARCHITECTURE: "DiffusionDet"
-  WEIGHTS: "/content/DiffusionDetLidar/diffdet_coco_swinbase.pth"
+  WEIGHTS: "DiffusionDetLidar/diffdet_coco_swinbase.pth"
   PIXEL_MEAN: [123.675, 116.280, 103.530]
   PIXEL_STD: [58.395, 57.120, 57.375]
   BACKBONE:
