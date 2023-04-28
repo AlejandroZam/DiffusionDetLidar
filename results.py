@@ -58,7 +58,9 @@ def parse_args():
     parser.add_argument(
         '--kitti_root', help="Path of the KITTI dataset", default='/content/DiffusionDetLidar/datasets/bv_kitti/testing', type=str)
     parser.add_argument(
-        '--eval_only', help="Write results in KITTI format", default=False, action="store_true")
+        '--eval_only', help="run evaluations only", default=False, action="store_true")
+    parser.add_argument(
+        '--weights_dir', help="Name of the configuration to use without extension", default='/content/output', type=str)        
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
@@ -225,7 +227,7 @@ def prepare_for_coco_detection_KITTI(instance, output_folder, filename, write, k
 # def get_3dbox_iou();
 
 
-def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test, score_thresh , nms_thresh, kitti_root ,eval_only):
+def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test, score_thresh , nms_thresh, kitti_root ,eval_only,weights_dir):
     # KITTI paths
     kitti_im_path = kitti_root+'/image_2'
     kitti_calib_path = kitti_root+'/calib'
@@ -237,7 +239,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
     add_diffusiondet_config(cfg)
     add_model_ema_configs(cfg)
     cfg.DATASETS.TEST = ("kitti_val",)
-    cfg.OUTPUT_DIR = '/content/output_swinbase'
+    cfg.OUTPUT_DIR = weights_dir
     cfg.VIEWPOINT = False
     cfg.VIEWPOINT_RESIDUAL = False
     cfg.ROTATED_BOX_TRAINING = False
@@ -260,7 +262,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
     if 1:
         optional_arguments.append('height')
 
-    val_path = detectron2_root+"/content/DiffusionDetLidar/archive/annotations/{}.json".format(ann_val)
+    val_path = detectron2_root+"/archive/annotations/{}.json".format(ann_val)
     register_coco_instances("kitti_val", {}, val_path, detectron2_root+'/datasets/bv_kitti/image', extra_arguments=optional_arguments)
     calib_root_path = '/content/DiffusionDetLidar/datasets/bv_kitti/label'
     toeval = []
@@ -447,4 +449,4 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
 if __name__ == '__main__':
     args = parse_args()
 
-    main(args.config_file, args.ann_val, args.write, args.img2show, args.save_img, args.eval_chkp, args.force_test, args.score, args.nms, args.kitti_root,args.eval_only)
+    main(args.config_file, args.ann_val, args.write, args.img2show, args.save_img, args.eval_chkp, args.force_test, args.score, args.nms, args.kitti_root,args.eval_only,args.weights_dir)
