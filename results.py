@@ -301,7 +301,7 @@ def main(config_file, ann_val, write, img2show, save_img, eval_chkp, force_test,
         cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = score_thresh 
         cfg.MODEL.ROI_HEADS.NMS_THRESH_TEST = nms_thresh
         predictor = DefaultPredictor(cfg)
-        
+        #
 
         val_bv_dicts = DatasetCatalog.get("kitti_train")
         val_bv_meta = MetadataCatalog.get("kitti_train")
